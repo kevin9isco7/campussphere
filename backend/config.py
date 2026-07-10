@@ -50,11 +50,17 @@ class Config:
     DB_USER = DATABASE_USER
     DB_PASSWORD = DATABASE_PASSWORD
 
-    FRONTEND_URL = env_value("FRONTEND_URL", default="", allow_empty=True)
+    DEFAULT_FRONTEND_URL = "https://campussphere-sigma.vercel.app"
+    FRONTEND_URL = env_value("FRONTEND_URL", default=DEFAULT_FRONTEND_URL, allow_empty=True)
+    _default_cors_source = (
+        "http://localhost,http://localhost:8000,"
+        "http://127.0.0.1,http://127.0.0.1:8000,"
+        f"{DEFAULT_FRONTEND_URL}"
+    )
     _cors_source = env_value(
         "CORS_ALLOWED_ORIGINS",
         "CORS_ORIGINS",
-        default="http://localhost,http://localhost:8000,http://127.0.0.1,http://127.0.0.1:8000",
+        default=_default_cors_source,
     )
     CORS_ORIGINS = [
         origin.strip()
