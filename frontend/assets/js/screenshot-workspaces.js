@@ -357,13 +357,13 @@ function renderAdmissionsTable(rows) {
   return `<table class="data-table">
     <thead><tr><th>App ID</th><th>Applicant</th><th>Grade</th><th>Guardian</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>${rows.length ? rows.map((row) => `<tr>
-      <td>${escapeHtml(row.application_no)}</td>
-      <td><div class="person-cell">${avatar(`${row.first_name} ${row.last_name}`)}<span><strong>${escapeHtml(`${row.first_name} ${row.last_name}`)}</strong><small>${escapeHtml(row.guardian_email || "No guardian email")}</small></span></div></td>
-      <td>${escapeHtml(row.grade_applied)}</td>
-      <td>${escapeHtml(row.guardian_name)}</td>
-      <td>${formatDate(row.created_at)}</td>
-      <td>${statusBadge(row.status)}</td>
-      <td>${rowActions(row.id)}</td>
+      <td data-label="App ID">${escapeHtml(row.application_no)}</td>
+      <td data-label="Applicant"><div class="person-cell">${avatar(`${row.first_name} ${row.last_name}`)}<span><strong>${escapeHtml(`${row.first_name} ${row.last_name}`)}</strong><small>${escapeHtml(row.guardian_email || "No guardian email")}</small></span></div></td>
+      <td data-label="Grade">${escapeHtml(row.grade_applied)}</td>
+      <td data-label="Guardian">${escapeHtml(row.guardian_name)}</td>
+      <td data-label="Date">${formatDate(row.created_at)}</td>
+      <td data-label="Status">${statusBadge(row.status)}</td>
+      <td data-label="Actions">${rowActions(row.id)}</td>
     </tr>`).join("") : emptyTable(7)}</tbody>
   </table>`;
 }
@@ -372,15 +372,15 @@ function renderStudentsTable(rows) {
   return `<table class="data-table">
     <thead><tr><th>Photo</th><th>Student ID</th><th>Full Name</th><th>Gender</th><th>Email</th><th>Phone</th><th>Enrolled</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>${rows.length ? rows.map((row) => `<tr>
-      <td>${avatar(`${row.first_name} ${row.last_name}`)}</td>
-      <td>${escapeHtml(row.admission_no)}</td>
-      <td><strong>${escapeHtml(`${row.first_name} ${row.last_name}`)}</strong></td>
-      <td>${escapeHtml(row.gender)}</td>
-      <td>${escapeHtml(row.email || "-")}</td>
-      <td>${escapeHtml(row.phone || "-")}</td>
-      <td>${formatDate(row.created_at)}</td>
-      <td>${statusBadge(row.status)}</td>
-      <td>${rowActions(row.id)}</td>
+      <td data-label="Photo">${avatar(`${row.first_name} ${row.last_name}`)}</td>
+      <td data-label="Student ID">${escapeHtml(row.admission_no)}</td>
+      <td data-label="Full Name"><strong>${escapeHtml(`${row.first_name} ${row.last_name}`)}</strong></td>
+      <td data-label="Gender">${escapeHtml(row.gender)}</td>
+      <td data-label="Email">${escapeHtml(row.email || "-")}</td>
+      <td data-label="Phone">${escapeHtml(row.phone || "-")}</td>
+      <td data-label="Enrolled">${formatDate(row.created_at)}</td>
+      <td data-label="Status">${statusBadge(row.status)}</td>
+      <td data-label="Actions">${rowActions(row.id)}</td>
     </tr>`).join("") : emptyTable(9)}</tbody>
   </table>`;
 }
@@ -389,12 +389,12 @@ function renderMessagesTable(rows) {
   return `<table class="data-table">
     <thead><tr><th>Subject</th><th>Channel</th><th>Audience</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
     <tbody>${rows.length ? rows.map((row) => `<tr>
-      <td><strong>${escapeHtml(row.subject)}</strong></td>
-      <td>${escapeHtml(row.channel)}</td>
-      <td>${escapeHtml(row.audience)}</td>
-      <td>${statusBadge(row.status)}</td>
-      <td>${formatDate(row.created_at)}</td>
-      <td>${rowActions(row.id)}</td>
+      <td data-label="Subject"><strong>${escapeHtml(row.subject)}</strong></td>
+      <td data-label="Channel">${escapeHtml(row.channel)}</td>
+      <td data-label="Audience">${escapeHtml(row.audience)}</td>
+      <td data-label="Status">${statusBadge(row.status)}</td>
+      <td data-label="Date">${formatDate(row.created_at)}</td>
+      <td data-label="Actions">${rowActions(row.id)}</td>
     </tr>`).join("") : emptyTable(6)}</tbody>
   </table>`;
 }

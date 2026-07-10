@@ -107,6 +107,7 @@ async function buildLayout(activeModule) {
   if (!shell) return;
 
   shell.innerHTML = `
+    <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
     <aside class="sidebar" id="sidebar">
       <div class="brand">
         <img src="../../assets/images/logo.svg" alt="School logo" id="brandLogo">
@@ -117,7 +118,7 @@ async function buildLayout(activeModule) {
     </aside>
     <section class="content-area">
       <header class="topbar">
-        <button class="btn icon-btn" id="sidebarToggle" title="Toggle sidebar">${uiIcons.menu}</button>
+        <button class="btn icon-btn" id="sidebarToggle" title="Toggle sidebar" aria-controls="sidebar" aria-expanded="false">${uiIcons.menu}</button>
         <div class="search-box">
           <input class="input" id="globalSearch" placeholder="Search records, people, invoices..." autocomplete="off">
         </div>
@@ -196,14 +197,42 @@ async function buildLayout(activeModule) {
     location.href = "../../index.html";
   });
 
-  document.querySelector("#sidebarToggle").addEventListener("click", () => {
-    const sidebar = document.querySelector("#sidebar");
-    if (matchMedia("(max-width: 820px)").matches) {
-      sidebar.classList.toggle("open");
+  const sidebar = document.querySelector("#sidebar");
+  const sidebarToggle = document.querySelector("#sidebarToggle");
+  const sidebarBackdrop = document.querySelector("#sidebarBackdrop");
+  const mobileSidebarQuery = matchMedia("(max-width: 820px)");
+  const closeMobileSidebar = () => {
+    sidebar.classList.remove("open");
+    sidebarBackdrop.hidden = true;
+    sidebarToggle.setAttribute("aria-expanded", "false");
+  };
+  const openMobileSidebar = () => {
+    sidebar.classList.add("open");
+    sidebarBackdrop.hidden = false;
+    sidebarToggle.setAttribute("aria-expanded", "true");
+  };
+
+  sidebarToggle.addEventListener("click", () => {
+    if (mobileSidebarQuery.matches) {
+      if (sidebar.classList.contains("open")) {
+        closeMobileSidebar();
+      } else {
+        openMobileSidebar();
+      }
     } else {
       sidebar.classList.toggle("is-collapsed");
       document.querySelector(".app-shell").style.gridTemplateColumns = sidebar.classList.contains("is-collapsed") ? "84px 1fr" : "280px 1fr";
     }
+  });
+  sidebarBackdrop.addEventListener("click", closeMobileSidebar);
+  document.querySelector("#navList").addEventListener("click", (event) => {
+    if (event.target.closest("a") && mobileSidebarQuery.matches) {
+      closeMobileSidebar();
+    }
+  });
+  mobileSidebarQuery.addEventListener("change", closeMobileSidebar);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeMobileSidebar();
   });
 
   const theme = localStorage.getItem("theme") || "light";

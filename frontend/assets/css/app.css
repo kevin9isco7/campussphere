@@ -36,11 +36,22 @@
   box-sizing: border-box;
 }
 
+html {
+  min-width: 0;
+}
+
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  overflow-x: hidden;
+}
+
+img,
+video,
+svg {
+  max-width: 100%;
 }
 
 button,
@@ -1007,6 +1018,18 @@ button {
   grid-template-columns: var(--sidebar-width) 1fr;
 }
 
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-backdrop[hidden] {
+  display: none;
+}
+
 .sidebar {
   position: sticky;
   top: 0;
@@ -1223,6 +1246,7 @@ button {
 
 .search-box {
   position: relative;
+  min-width: 0;
 }
 
 .search-box input {
@@ -1242,6 +1266,7 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .context-pill {
@@ -1272,6 +1297,10 @@ button {
   margin-bottom: 22px;
 }
 
+.page-header > div {
+  min-width: 0;
+}
+
 .page-header h1 {
   margin: 0;
   font-size: 28px;
@@ -1282,6 +1311,13 @@ button {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+
+.toolbar .btn,
+.toolbar .input,
+.toolbar .select {
+  min-width: 0;
 }
 
 .crud-filter-toolbar {
@@ -1351,6 +1387,7 @@ button {
 .table-wrap {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
@@ -1365,6 +1402,7 @@ button {
   border-bottom: 1px solid var(--border);
   text-align: left;
   vertical-align: middle;
+  overflow-wrap: anywhere;
 }
 
 .data-table th {
@@ -1382,6 +1420,7 @@ button {
 .row-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .badge {
@@ -2333,6 +2372,380 @@ button {
   .settings-section-button .soon-pill {
     justify-self: start;
     grid-column: 2;
+  }
+}
+
+@media (max-width: 820px) {
+  .access-shell,
+  .access-shell.wide,
+  .enterprise-access-shell {
+    width: 100%;
+  }
+
+  .auth-brand {
+    align-items: flex-start;
+  }
+
+  .sidebar {
+    width: min(320px, calc(100vw - 48px));
+    max-width: 100%;
+    box-shadow: 18px 0 60px rgba(15, 23, 42, 0.18);
+  }
+
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 12px 16px;
+    gap: 10px;
+  }
+
+  .search-box input {
+    width: 100%;
+  }
+
+  .top-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .context-pill {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .year-pill,
+  .badge {
+    min-height: 38px;
+  }
+
+  .page {
+    padding: 16px;
+  }
+
+  .page-header .toolbar,
+  .card-toolbar .toolbar {
+    width: 100%;
+  }
+
+  .stats-grid,
+  .grid-2,
+  .compact-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .communication-grid,
+  .chat-layout,
+  .broadcast-form,
+  .form-grid,
+  .settings-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-toolbar {
+    align-items: stretch;
+  }
+
+  .workspace-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .access-page {
+    padding: 18px 14px;
+  }
+
+  .access-heading {
+    margin: 14px auto 24px;
+  }
+
+  .access-heading h1,
+  .gateway-copy h1 {
+    font-size: 34px;
+    line-height: 1.08;
+  }
+
+  .access-heading p,
+  .gateway-copy p {
+    font-size: 15px;
+  }
+
+  .gateway-hero,
+  .gateway-status-panel,
+  .institution-grid,
+  .portal-grid {
+    gap: 14px;
+  }
+
+  .selection-card,
+  .standard-institution,
+  .premium-institution,
+  .portal-card,
+  .card,
+  .stat-card {
+    padding: 16px;
+  }
+
+  .premium-institution {
+    grid-template-rows: 150px 1fr;
+  }
+
+  .institution-visual {
+    min-height: 150px;
+  }
+
+  .institution-body {
+    padding: 18px;
+  }
+
+  .data-card {
+    overflow: visible;
+  }
+
+  .enhanced-card {
+    padding: 0;
+  }
+
+  .portal-card {
+    grid-template-columns: 46px 1fr;
+  }
+
+  .portal-card .arrow {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .topbar {
+    min-height: auto;
+  }
+
+  .top-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(42px, 1fr));
+  }
+
+  .context-pill {
+    grid-column: 1 / -1;
+  }
+
+  #academicYear,
+  #profileBadge {
+    grid-column: span 2;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .topbar .icon-btn {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .topbar-popover {
+    top: 130px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+
+  .page {
+    padding: 14px;
+  }
+
+  .page-header,
+  .card-toolbar,
+  .pagination,
+  .broadcast-footer,
+  .settings-page-header,
+  .settings-panel-heading {
+    display: grid;
+    gap: 12px;
+  }
+
+  .toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .toolbar .btn,
+  .toolbar .input,
+  .toolbar .select,
+  .module-search-input,
+  .module-filter-select,
+  .per-page-select {
+    width: 100%;
+    max-width: none;
+  }
+
+  .stats-grid,
+  .grid-2,
+  .compact-stats,
+  .communication-grid,
+  .chat-layout,
+  .broadcast-form,
+  .form-grid,
+  .settings-form-grid,
+  .settings-workspace,
+  .settings-menu,
+  .settings-upload-grid,
+  .upload-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .table-wrap {
+    overflow: visible;
+  }
+
+  .data-table {
+    min-width: 0;
+    display: block;
+    border-collapse: separate;
+  }
+
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .data-table tr {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: 0 12px 28px rgba(16, 32, 51, 0.08);
+  }
+
+  .data-table td {
+    display: grid;
+    grid-template-columns: minmax(104px, 40%) minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .data-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .data-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .data-table td[colspan] {
+    display: block;
+  }
+
+  .data-table td[colspan]::before {
+    display: none;
+  }
+
+  .row-actions {
+    justify-content: flex-start;
+  }
+
+  .row-actions .btn {
+    flex: 1 1 96px;
+  }
+
+  .modal-backdrop {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .modal {
+    width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .modal-header,
+  .modal-footer {
+    display: grid;
+  }
+
+  .form-grid {
+    padding: 14px;
+  }
+
+  .form-grid .wide {
+    grid-column: auto;
+  }
+
+  .toast {
+    right: 14px;
+    bottom: 14px;
+    left: 14px;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .chart-row {
+    grid-template-columns: 86px minmax(0, 1fr) 42px;
+  }
+
+  .workspace-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .topbar {
+    padding: 10px 12px;
+  }
+
+  .top-actions {
+    grid-template-columns: repeat(3, minmax(40px, 1fr));
+  }
+
+  .context-pill,
+  #academicYear,
+  #profileBadge {
+    grid-column: 1 / -1;
+  }
+
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .page {
+    padding: 12px;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .card,
+  .stat-card {
+    padding: 14px;
+  }
+
+  .stat-card strong {
+    font-size: 24px;
+  }
+
+  .data-table td {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .person-cell {
+    align-items: flex-start;
   }
 }
 

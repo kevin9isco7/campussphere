@@ -71,7 +71,7 @@ function renderRecent(rows) {
   node.innerHTML = `<table class="data-table">
     <thead><tr><th>Admission No</th><th>Name</th><th>Created</th></tr></thead>
     <tbody>${rows
-      .map((row) => `<tr><td>${escapeHtml(row.admission_no)}</td><td>${escapeHtml(row.first_name)} ${escapeHtml(row.last_name)}</td><td>${escapeHtml(row.created_at)}</td></tr>`)
+      .map((row) => `<tr><td data-label="Admission No">${escapeHtml(row.admission_no)}</td><td data-label="Name">${escapeHtml(row.first_name)} ${escapeHtml(row.last_name)}</td><td data-label="Created">${escapeHtml(row.created_at)}</td></tr>`)
       .join("")}</tbody>
   </table>`;
 }

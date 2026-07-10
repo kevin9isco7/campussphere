@@ -153,8 +153,8 @@ const CrudPage = {
     const body = this.records.length
       ? this.records
           .map((row) => `<tr>
-            ${columns.map((column) => `<td>${this.renderCell(row[column])}</td>`).join("")}
-            <td><div class="row-actions">
+            ${columns.map((column) => `<td data-label="${escapeHtml(formatLabel(column))}">${this.renderCell(row[column])}</td>`).join("")}
+            <td data-label="Actions"><div class="row-actions">
               <button class="btn" data-edit="${row.id}">Edit</button>
               <button class="btn btn-danger" data-delete="${row.id}">Delete</button>
             </div></td>
@@ -306,7 +306,7 @@ const CrudPage = {
       const columns = Object.keys(rows[0]);
       output.innerHTML = `<table class="data-table">
         <thead><tr>${columns.map((column) => `<th>${escapeHtml(formatLabel(column))}</th>`).join("")}</tr></thead>
-        <tbody>${rows.map((row) => `<tr>${columns.map((column) => `<td>${this.renderCell(row[column])}</td>`).join("")}</tr>`).join("")}</tbody>
+        <tbody>${rows.map((row) => `<tr>${columns.map((column) => `<td data-label="${escapeHtml(formatLabel(column))}">${this.renderCell(row[column])}</td>`).join("")}</tr>`).join("")}</tbody>
       </table>`;
     } catch (error) {
       toast(error.message);
