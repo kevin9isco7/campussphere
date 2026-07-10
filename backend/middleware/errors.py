@@ -1,5 +1,7 @@
 from pymysql import IntegrityError
 
+from config import Config
+
 
 class ApiError(Exception):
     def __init__(self, message, status_code=400, details=None):
@@ -22,10 +24,11 @@ def register_error_handlers(app):
 
     @app.errorhandler(IntegrityError)
     def handle_integrity_error(error):
+        details = {"database": str(error)} if Config.DEBUG or Config.APP_ENV == "development" else {}
         return {
             "error": {
                 "message": "The request violates a database constraint.",
-                "details": {"database": str(error)},
+                "details": details,
                 "status": 409,
             }
         }, 409
