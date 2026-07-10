@@ -17,6 +17,8 @@ env/
 # Local uploads and generated files
 uploads/
 database/backups/
+database/aiven-import.env
+database/*.pem
 !backend/uploads/
 backend/uploads/**
 !backend/uploads/.gitkeep
