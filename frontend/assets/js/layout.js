@@ -113,7 +113,7 @@ async function buildLayout(activeModule) {
         <div class="brand-title"><span id="schoolName">Enterprise School</span><br><span class="muted">ERP Suite</span></div>
       </div>
       <nav class="nav-list" id="navList"></nav>
-      <a class="nav-link" href="#" id="logoutLink"><span class="nav-icon">${uiIcons.logout}</span><span class="nav-text">Logout</span></a>
+      <a class="nav-link" href="../../index.html?logout=1" id="logoutLink"><span class="nav-icon">${uiIcons.logout}</span><span class="nav-text">Logout</span></a>
     </aside>
     <section class="content-area">
       <header class="topbar">

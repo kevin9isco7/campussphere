@@ -94,6 +94,13 @@ const AuthFlow = {
   async init() {
     const root = document.querySelector("#authRoot");
     if (!root) return;
+    if (new URLSearchParams(location.search).get("logout") === "1") {
+      Api.clearToken();
+      sessionStorage.removeItem("portalContext");
+      sessionStorage.removeItem("selectedInstitution");
+      sessionStorage.removeItem("selectedRole");
+      history.replaceState(null, "", location.pathname);
+    }
     if (Api.token()) {
       location.href = "pages/dashboard/index.html";
       return;
