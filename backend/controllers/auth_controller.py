@@ -40,7 +40,7 @@ def login():
             raise ApiError("Invalid email or password.", 401)
         if institution_type and user["institution_type"] not in (institution_type, "global"):
             raise ApiError("This account is not assigned to the selected institution.", 403)
-        if portal_key and user["portal_key"] not in (portal_key, "administrator", "global"):
+        if portal_key and user["portal_key"] not in (portal_key, "global"):
             raise ApiError("This account is not assigned to the selected portal.", 403)
         cursor.execute("UPDATE users SET last_login_at = NOW() WHERE id = %s", (user["id"],))
 

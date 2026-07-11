@@ -8,6 +8,8 @@ from models.module_registry import MODULES, NAVIGATION
 module_bp = Blueprint("modules", __name__, url_prefix="/api")
 
 ALLOWED_DIRECTIONS = {"asc", "desc"}
+INSTITUTION_TYPES = {"secondary", "university"}
+_COLUMN_CACHE = {}
 
 
 def _module_or_404(module_key):
@@ -25,6 +27,53 @@ def _require_module_permission(module):
 
 def _field_names(module):
     return [field for field, definition in module["fields"].items() if not definition.get("virtual")]
+
+
+def _current_institution():
+    institution = (getattr(g, "current_user", {}) or {}).get("institution")
+    return institution if institution in INSTITUTION_TYPES else None
+
+
+def _table_has_column(table, column):
+    cache_key = (table, column)
+    if cache_key not in _COLUMN_CACHE:
+        with db_cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS total
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = %s
+                  AND COLUMN_NAME = %s
+                """,
+                (table, column),
+            )
+            _COLUMN_CACHE[cache_key] = cursor.fetchone()["total"] > 0
+    return _COLUMN_CACHE[cache_key]
+
+
+def _module_supports_institution_scope(module):
+    return module.get("institution_scoped") and _table_has_column(module["table"], "institution_type")
+
+
+def _append_scope(module_key, module, where, params, include_global_settings=False):
+    institution = _current_institution()
+    if not institution or not _module_supports_institution_scope(module):
+        return
+    table = module["table"]
+    if module_key == "settings" and include_global_settings:
+        where.append(f"({table}.institution_type = %s OR {table}.institution_type = 'global')")
+        params.append(institution)
+        return
+    where.append(f"{table}.institution_type = %s")
+    params.append(institution)
+
+
+def _scoped_insert_data(module, data):
+    institution = _current_institution()
+    if institution and _module_supports_institution_scope(module):
+        data.setdefault("institution_type", institution)
+    return data
 
 
 def _validate_payload(module, data, partial=False):
@@ -87,13 +136,31 @@ def public_settings():
         "login_background",
     )
     placeholders = ", ".join(["%s"] * len(public_keys))
+    institution = (request.args.get("institution") or "").strip().lower()
+    settings = {}
     with db_cursor() as cursor:
-        cursor.execute(
-            f"SELECT setting_key, setting_value FROM school_settings WHERE setting_key IN ({placeholders})",
-            public_keys,
-        )
+        if institution in INSTITUTION_TYPES and _table_has_column("school_settings", "institution_type"):
+            cursor.execute(
+                f"""
+                SELECT setting_key, setting_value, institution_type
+                FROM school_settings
+                WHERE setting_key IN ({placeholders})
+                  AND institution_type IN ('global', %s)
+                """,
+                [*public_keys, institution],
+            )
+        else:
+            cursor.execute(
+                f"SELECT setting_key, setting_value FROM school_settings WHERE setting_key IN ({placeholders})",
+                public_keys,
+            )
         records = cursor.fetchall()
-    return {"settings": {row["setting_key"]: row["setting_value"] for row in records}}
+    for row in records:
+        scope = row.get("institution_type", "global")
+        if scope == "global" and row["setting_key"] in settings:
+            continue
+        settings[row["setting_key"]] = row["setting_value"]
+    return {"settings": settings}
 
 
 @module_bp.get("/modules/<module_key>/meta")
@@ -143,9 +210,12 @@ def list_records(module_key):
             if field in _field_names(module):
                 where.append(f"{table}.{field} = %s")
                 params.append(value)
+    _append_scope(module_key, module, where, params, include_global_settings=True)
 
     columns = [f"{table}.id", f"{table}.created_at", f"{table}.updated_at"]
     columns.extend([f"{table}.{field}" for field in _field_names(module)])
+    if _table_has_column(table, "institution_type") and "institution_type" not in _field_names(module):
+        columns.append(f"{table}.institution_type")
     columns.extend(module.get("select_extra", []))
     joins = module.get("joins", "")
     where_sql = " AND ".join(where)
@@ -183,6 +253,7 @@ def create_record(module_key):
     module = _module_or_404(module_key)
     _require_module_permission(module)
     data = _validate_payload(module, request.get_json(silent=True) or {})
+    data = _scoped_insert_data(module, data)
     if module_key == "user-management":
         data["password_hash"] = hash_password(data.pop("password"))
     fields = list(data.keys())
@@ -200,8 +271,11 @@ def get_record(module_key, record_id):
     module = _module_or_404(module_key)
     _require_module_permission(module)
     table = module["table"]
+    where = ["id = %s"]
+    params = [record_id]
+    _append_scope(module_key, module, where, params, include_global_settings=True)
     with db_cursor() as cursor:
-        cursor.execute(f"SELECT * FROM {table} WHERE id = %s", (record_id,))
+        cursor.execute(f"SELECT * FROM {table} WHERE {' AND '.join(where)}", params)
         record = cursor.fetchone()
     if not record:
         raise ApiError("Record not found.", 404)
@@ -219,9 +293,12 @@ def update_record(module_key, record_id):
     if not data:
         raise ApiError("No valid fields were supplied.", 422)
     assignments = ", ".join([f"{field} = %s" for field in data])
-    sql = f"UPDATE {module['table']} SET {assignments} WHERE id = %s"
+    where = ["id = %s"]
+    where_params = [record_id]
+    _append_scope(module_key, module, where, where_params)
+    sql = f"UPDATE {module['table']} SET {assignments} WHERE {' AND '.join(where)}"
     with db_cursor(commit=True) as cursor:
-        cursor.execute(sql, [*data.values(), record_id])
+        cursor.execute(sql, [*data.values(), *where_params])
         if cursor.rowcount == 0:
             raise ApiError("Record not found.", 404)
     return {"message": "Record updated."}
@@ -232,8 +309,11 @@ def update_record(module_key, record_id):
 def delete_record(module_key, record_id):
     module = _module_or_404(module_key)
     _require_module_permission(module)
+    where = ["id = %s"]
+    params = [record_id]
+    _append_scope(module_key, module, where, params)
     with db_cursor(commit=True) as cursor:
-        cursor.execute(f"DELETE FROM {module['table']} WHERE id = %s", (record_id,))
+        cursor.execute(f"DELETE FROM {module['table']} WHERE {' AND '.join(where)}", params)
         if cursor.rowcount == 0:
             raise ApiError("Record not found.", 404)
     return {"message": "Record deleted."}

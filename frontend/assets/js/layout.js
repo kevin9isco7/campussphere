@@ -52,7 +52,7 @@ const PortalModules = {
     student: ["dashboard", "academic", "subjects", "curriculum", "attendance", "timetable", "assignments", "examinations", "results", "finance", "receipts", "library", "hostel", "transport", "communication", "announcements", "reports"],
     teacher: ["dashboard", "students", "academic", "classes", "subjects", "curriculum", "attendance", "timetable", "assignments", "examinations", "results", "communication", "announcements", "reports"],
     parent: ["dashboard", "students", "attendance", "timetable", "assignments", "examinations", "results", "finance", "receipts", "communication", "announcements", "reports"],
-    administrator: ["dashboard", "admissions", "students", "parents", "teachers", "academic", "classes", "subjects", "curriculum", "attendance", "timetable", "assignments", "examinations", "results", "finance", "receipts", "expenses", "scholarships", "canteen", "payroll", "hr", "library", "hostel", "transport", "communication", "announcements", "sms-reports", "reports", "user-management", "settings", "audit-logs"],
+    administrator: ["dashboard", "admissions", "students", "parents", "teachers", "classes", "subjects", "curriculum", "attendance", "timetable", "assignments", "examinations", "results", "finance", "receipts", "expenses", "scholarships", "canteen", "payroll", "hr", "library", "hostel", "transport", "communication", "announcements", "sms-reports", "reports", "user-management", "settings", "audit-logs"],
     accountant: ["dashboard", "students", "finance", "receipts", "expenses", "scholarships", "canteen", "payroll", "reports", "settings"],
     librarian: ["dashboard", "students", "library", "reports"],
     hr: ["dashboard", "teachers", "payroll", "hr", "reports", "settings"],
@@ -60,7 +60,7 @@ const PortalModules = {
   university: {
     student: ["dashboard", "academic", "subjects", "curriculum", "attendance", "timetable", "assignments", "examinations", "results", "finance", "receipts", "library", "hostel", "transport", "communication", "announcements", "reports"],
     lecturer: ["dashboard", "students", "academic", "classes", "subjects", "curriculum", "attendance", "timetable", "assignments", "examinations", "results", "communication", "announcements", "reports"],
-    administrator: ["dashboard", "admissions", "students", "teachers", "academic", "classes", "subjects", "curriculum", "attendance", "timetable", "assignments", "examinations", "results", "finance", "receipts", "expenses", "scholarships", "payroll", "hr", "library", "hostel", "transport", "communication", "announcements", "sms-reports", "reports", "user-management", "settings", "audit-logs"],
+    administrator: ["dashboard", "admissions", "students", "academic", "classes", "subjects", "curriculum", "teachers", "attendance", "timetable", "assignments", "examinations", "results", "finance", "receipts", "expenses", "scholarships", "payroll", "hr", "library", "hostel", "transport", "communication", "announcements", "sms-reports", "reports", "user-management", "settings", "audit-logs"],
     registrar: ["dashboard", "admissions", "students", "academic", "classes", "subjects", "examinations", "results", "communication", "announcements", "reports", "settings"],
     dean: ["dashboard", "students", "teachers", "academic", "classes", "subjects", "curriculum", "examinations", "results", "reports"],
     hod: ["dashboard", "teachers", "academic", "classes", "subjects", "curriculum", "timetable", "assignments", "examinations", "results", "reports"],
@@ -71,9 +71,53 @@ const PortalModules = {
 };
 
 const UniversityLabels = {
-  teachers: "Lecturers",
-  classes: "Courses",
   admissions: "Registrar Services",
+  students: "Student Records",
+  teachers: "Lecturers",
+  academic: "Faculties & Departments",
+  classes: "Courses",
+  subjects: "Programmes",
+  curriculum: "Course Catalog",
+  attendance: "Lecture Attendance",
+  timetable: "Academic Timetable",
+  assignments: "Coursework",
+  examinations: "Examinations Office",
+  results: "Transcripts & Results",
+  finance: "Student Finance",
+  receipts: "Fee Receipts",
+  expenses: "Operating Expenses",
+  scholarships: "Scholarships & Aid",
+  payroll: "Staff Payroll",
+  hr: "Staff Administration",
+  hostel: "Campus Housing",
+  transport: "Campus Transport",
+  communication: "University Communications",
+  "sms-reports": "SMS Reports",
+  reports: "Institution Reports",
+  "user-management": "Access Control",
+  settings: "University Settings",
+  "audit-logs": "Audit Logs",
+};
+
+const SecondaryLabels = {
+  admissions: "Admissions",
+  students: "Student Profiles",
+  parents: "Parents & Guardians",
+  teachers: "Teachers",
+  classes: "Classes",
+  subjects: "Subjects",
+  curriculum: "Curriculum",
+  attendance: "Attendance",
+  timetable: "Timetable",
+  assignments: "Assignments",
+  examinations: "Examinations",
+  results: "Results",
+  finance: "School Finance",
+  receipts: "Fee Receipts",
+  canteen: "Canteen",
+  communication: "School Communication",
+  "user-management": "User Management",
+  settings: "School Settings",
 };
 
 function getPortalContext() {
@@ -92,8 +136,24 @@ function filterModulesForPortal(modules) {
     .filter((module) => allowed.includes(module.key))
     .map((module) => ({
       ...module,
-      label: context.institution === "university" ? UniversityLabels[module.key] || module.label : module.label,
+      label: context.institution === "university"
+        ? UniversityLabels[module.key] || module.label
+        : SecondaryLabels[module.key] || module.label,
     }));
+}
+
+function recordsToScopedSettings(records) {
+  const context = getPortalContext();
+  const institution = context.institution || "global";
+  const scoped = new Map();
+  records.forEach((record) => {
+    const scope = record.institution_type || "global";
+    const existing = scoped.get(record.setting_key);
+    if (!existing || scope === institution || (existing.institution_type !== institution && scope === "global")) {
+      scoped.set(record.setting_key, record);
+    }
+  });
+  return Object.fromEntries([...scoped.entries()].map(([key, record]) => [key, record.setting_value]));
 }
 
 function moduleHref(moduleKey) {
@@ -223,7 +283,7 @@ async function hydrateShell(activeModule) {
       Api.get("/modules/settings?search=&per_page=20", { timeoutMs: 12000 }).catch(() => ({ records: [] })),
     ]);
     const modules = modulesResult.modules || [];
-    const settings = Object.fromEntries((settingsResult.records || []).map((row) => [row.setting_key, row.setting_value]));
+    const settings = recordsToScopedSettings(settingsResult.records || []);
     applyShellSettings(settings);
     renderShellNavigation(modules, activeModule);
     writeShellCache({ modules, settings, cachedAt: Date.now() });

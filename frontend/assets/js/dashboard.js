@@ -3,9 +3,7 @@ async function renderDashboard() {
   const page = document.querySelector("#pageContent");
   const context = getDashboardContext();
   const title = context.dashboardTitle || "Dashboard";
-  const description = context.institutionName && context.roleName
-    ? `${context.institutionName} ${context.roleName} portal overview across the modules available to this access path.`
-    : "Operational overview across admissions, academics, finance, and services.";
+  const description = dashboardDescription(context);
   page.innerHTML = `
     <div class="page-header">
       <div>
@@ -31,7 +29,7 @@ async function renderDashboard() {
     try {
       const result = await Api.get("/dashboard/summary");
       document.querySelector("#statsGrid").innerHTML = result.cards
-        .map((card) => `<article class="card stat-card"><span>${escapeHtml(card.label)}</span><strong>${escapeHtml(card.value)}</strong></article>`)
+        .map((card) => `<article class="card stat-card"><span>${escapeHtml(dashboardCardLabel(card.label, context))}</span><strong>${escapeHtml(card.value)}</strong></article>`)
         .join("");
       renderBars("#attendanceChart", result.charts.attendance, "status");
       renderBars("#financeChart", result.charts.finance, "status");
@@ -44,6 +42,28 @@ async function renderDashboard() {
   document.querySelector("#printDashboard").addEventListener("click", () => window.print());
   document.querySelector("#refreshDashboard").addEventListener("click", load);
   load();
+}
+
+function dashboardDescription(context) {
+  if (context.institution === "university" && context.role === "administrator") {
+    return "University command center for registrar services, faculties, departments, lecturers, student records, finance, and campus services.";
+  }
+  if (context.institution === "secondary" && context.role === "administrator") {
+    return "Secondary school command center for admissions, students, guardians, teachers, classes, attendance, fees, and school services.";
+  }
+  if (context.institutionName && context.roleName) {
+    return `${context.institutionName} ${context.roleName} portal overview across the modules available to this access path.`;
+  }
+  return "Operational overview across admissions, academics, finance, and services.";
+}
+
+function dashboardCardLabel(label, context) {
+  if (context.institution !== "university") return label;
+  const labels = {
+    Teachers: "Lecturers",
+    "Transport Routes": "Campus Routes",
+  };
+  return labels[label] || label;
 }
 
 function renderDashboardLoading() {

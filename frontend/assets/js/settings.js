@@ -361,7 +361,12 @@ function settingsIcon(name) {
 }
 
 function settingsStorageKey(key) {
-  return `campussphere.setting.${key}`;
+  return `campussphere.setting.${getPortalInstitution()}.${key}`;
+}
+
+function getPortalInstitution() {
+  const context = typeof getPortalContext === "function" ? getPortalContext() : {};
+  return context.institution || "global";
 }
 
 function getFieldServerKey(section, field) {
@@ -386,7 +391,15 @@ function getInstitutionTitle() {
 async function loadSettingsRecords() {
   try {
     const result = await Api.get("/modules/settings?per_page=100&sort=setting_key&direction=asc");
-    serverSettings = new Map(result.records.map((record) => [record.setting_key, record]));
+    const institution = getPortalInstitution();
+    serverSettings = new Map();
+    (result.records || []).forEach((record) => {
+      const scope = record.institution_type || "global";
+      const existing = serverSettings.get(record.setting_key);
+      if (!existing || scope === institution || (existing.institution_type !== institution && scope === "global")) {
+        serverSettings.set(record.setting_key, record);
+      }
+    });
   } catch (error) {
     serverSettings = new Map();
     toast(error.message || "Settings will be saved locally until the database is available.");
@@ -594,7 +607,8 @@ function collectActiveSettingsValues() {
 
 async function upsertSetting(key, value) {
   const existing = serverSettings.get(key);
-  if (existing) {
+  const institution = getPortalInstitution();
+  if (existing && (!existing.institution_type || existing.institution_type === institution || institution === "global")) {
     await Api.put(`/modules/settings/${existing.id}`, { setting_value: value });
     return existing.id;
   }

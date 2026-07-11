@@ -498,6 +498,44 @@ MODULES = {
 }
 
 
+INSTITUTION_SCOPED_MODULES = {
+    "admissions",
+    "students",
+    "parents",
+    "teachers",
+    "academic",
+    "classes",
+    "subjects",
+    "curriculum",
+    "attendance",
+    "timetable",
+    "assignments",
+    "examinations",
+    "results",
+    "finance",
+    "payroll",
+    "hr",
+    "library",
+    "hostel",
+    "transport",
+    "communication",
+    "announcements",
+    "sms-reports",
+    "canteen",
+    "receipts",
+    "expenses",
+    "scholarships",
+    "reports",
+    "user-management",
+    "settings",
+    "audit-logs",
+}
+
+for module_key in INSTITUTION_SCOPED_MODULES:
+    if module_key in MODULES:
+        MODULES[module_key]["institution_scoped"] = True
+
+
 NAVIGATION = [
     ("dashboard", "Dashboard", "dashboard.view"),
     ("admissions", "Admissions", "admissions.manage"),

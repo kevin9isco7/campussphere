@@ -1,51 +1,17 @@
+-- CampusSphere fresh-install schema.
+-- Do not import this file over a live database to apply updates.
+-- Use files in database/migrations/ for non-destructive production changes.
+
 CREATE DATABASE IF NOT EXISTS school_management
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
 USE school_management;
 
-SET FOREIGN_KEY_CHECKS = 0;
-
-DROP TABLE IF EXISTS school_profiles;
-DROP TABLE IF EXISTS scholarships;
-DROP TABLE IF EXISTS expenses;
-DROP TABLE IF EXISTS fee_receipts;
-DROP TABLE IF EXISTS canteen_orders;
-DROP TABLE IF EXISTS sms_reports;
-DROP TABLE IF EXISTS school_announcements;
-DROP TABLE IF EXISTS audit_logs;
-DROP TABLE IF EXISTS saved_reports;
-DROP TABLE IF EXISTS messages;
-DROP TABLE IF EXISTS transport_assignments;
-DROP TABLE IF EXISTS transport_routes;
-DROP TABLE IF EXISTS hostel_allocations;
-DROP TABLE IF EXISTS hostel_rooms;
-DROP TABLE IF EXISTS library_loans;
-DROP TABLE IF EXISTS library_books;
-DROP TABLE IF EXISTS payroll;
-DROP TABLE IF EXISTS employees;
-DROP TABLE IF EXISTS payments;
-DROP TABLE IF EXISTS invoices;
-DROP TABLE IF EXISTS exam_results;
-DROP TABLE IF EXISTS examinations;
-DROP TABLE IF EXISTS assignments;
-DROP TABLE IF EXISTS timetable_entries;
-DROP TABLE IF EXISTS attendance;
-DROP TABLE IF EXISTS curriculum;
-DROP TABLE IF EXISTS subjects;
-DROP TABLE IF EXISTS parents;
-DROP TABLE IF EXISTS students;
-DROP TABLE IF EXISTS classes;
-DROP TABLE IF EXISTS teachers;
-DROP TABLE IF EXISTS admissions;
-DROP TABLE IF EXISTS academic_years;
-DROP TABLE IF EXISTS school_settings;
-DROP TABLE IF EXISTS role_permissions;
-DROP TABLE IF EXISTS permissions;
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS roles;
-
-SET FOREIGN_KEY_CHECKS = 1;
+-- Previous versions dropped every table here before recreating the schema.
+-- That was unsafe for production imports because it erased live data.
+-- This file now intentionally refuses to overwrite existing tables; start from
+-- an empty database for fresh installs, and use database/migrations/ for updates.
 
 CREATE TABLE roles (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -89,10 +55,13 @@ CREATE TABLE users (
 
 CREATE TABLE school_settings (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  setting_key VARCHAR(120) NOT NULL UNIQUE,
+  institution_type ENUM('global','secondary','university') NOT NULL DEFAULT 'global',
+  setting_key VARCHAR(120) NOT NULL,
   setting_value TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_school_settings_scope_key (institution_type, setting_key),
+  INDEX idx_school_settings_scope (institution_type)
 ) ENGINE=InnoDB;
 
 CREATE TABLE academic_years (

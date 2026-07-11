@@ -44,7 +44,7 @@ const AuthFlow = {
         { key: "student", name: "Student", icon: AuthIcons.student, email: "secondary.student@campus.local", description: "Access learning records, assignments, attendance, results, fees, and services." },
         { key: "teacher", name: "Teacher", icon: AuthIcons.teacher, email: "secondary.teacher@campus.local", description: "Manage classes, attendance, assignments, examinations, and student progress." },
         { key: "parent", name: "Parent", icon: AuthIcons.parent, email: "secondary.parent@campus.local", description: "Monitor learner attendance, performance, invoices, communication, and services." },
-        { key: "administrator", name: "Administrator", icon: AuthIcons.admin, email: "secondary.admin@campus.local", description: "Control institutional operations, users, settings, analytics, and reports." },
+        { key: "administrator", name: "School Administrator", icon: AuthIcons.admin, email: "secondary.admin@campus.local", description: "Control K-12 operations, guardians, teachers, classes, fees, services, users, and reports." },
         { key: "accountant", name: "Accountant", icon: AuthIcons.finance, email: "secondary.accountant@campus.local", description: "Manage invoices, payments, payroll, fee reports, and finance controls." },
         { key: "librarian", name: "Librarian", icon: AuthIcons.library, email: "secondary.librarian@campus.local", description: "Manage catalogues, inventory, loans, returns, and library reports." },
         { key: "hr", name: "HR Officer", icon: AuthIcons.people, email: "secondary.hr@campus.local", description: "Manage employees, staff records, payroll inputs, and HR reports." },
@@ -74,7 +74,7 @@ const AuthFlow = {
       roles: [
         { key: "student", name: "Student", icon: AuthIcons.student, email: "university.student@campus.local", description: "Access courses, results, finance, library, hostel, and academic services." },
         { key: "lecturer", name: "Lecturer", icon: AuthIcons.teacher, email: "university.lecturer@campus.local", description: "Manage course delivery, attendance, assessments, results, and communication." },
-        { key: "administrator", name: "Administrator", icon: AuthIcons.admin, email: "university.admin@campus.local", description: "Manage university operations, users, settings, finance, and reporting." },
+        { key: "administrator", name: "University Administrator", icon: AuthIcons.admin, email: "university.admin@campus.local", description: "Manage registrar services, faculties, departments, lecturers, student records, finance, and campus governance." },
         { key: "registrar", name: "Registrar", icon: AuthIcons.registrar, email: "university.registrar@campus.local", description: "Manage admissions, student records, registration, examinations, and transcripts." },
         { key: "dean", name: "Dean", icon: AuthIcons.dean, email: "university.dean@campus.local", description: "Oversee faculties, departments, academic quality, staff, and institutional reports." },
         { key: "hod", name: "Head of Department", icon: AuthIcons.hod, email: "university.hod@campus.local", description: "Coordinate department staff, courses, curriculum, timetable, and results." },
@@ -121,7 +121,8 @@ const AuthFlow = {
 
   async refreshBranding() {
     try {
-      const result = await Api.get("/public/settings", { timeoutMs: 8000 });
+      const query = this.state.institution ? `?institution=${encodeURIComponent(this.state.institution)}` : "";
+      const result = await Api.get(`/public/settings${query}`, { timeoutMs: 8000 });
       this.branding = result.settings || {};
       writeJsonStorage("campussphere.publicBranding", this.branding);
       this.applyBranding();
@@ -229,11 +230,13 @@ const AuthFlow = {
   chooseInstitution(institutionKey) {
     this.saveContext(institutionKey);
     this.renderInstitutionSelection();
+    this.refreshBranding();
   },
 
   continueInstitution(institutionKey) {
     this.saveContext(institutionKey);
     this.renderPortalSelection();
+    this.refreshBranding();
   },
 
   renderPortalSelection() {
@@ -365,12 +368,15 @@ const AuthFlow = {
   getContext() {
     const institution = this.institutions[this.state.institution];
     const role = institution?.roles.find((item) => item.key === this.state.role);
+    const dashboardTitle = role?.key === "administrator"
+      ? (institution?.key === "university" ? "University Administrator Dashboard" : "Secondary School Administrator Dashboard")
+      : (role ? `${role.name} Dashboard` : "Dashboard");
     return {
       institution: this.state.institution,
       institutionName: institution?.name || "",
       role: this.state.role,
       roleName: role?.name || "",
-      dashboardTitle: role ? `${role.name} Dashboard` : "Dashboard",
+      dashboardTitle,
     };
   },
 
