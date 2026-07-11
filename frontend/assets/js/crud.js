@@ -15,6 +15,7 @@ const CrudPage = {
   async init(moduleKey) {
     this.moduleKey = moduleKey;
     await buildLayout(moduleKey);
+    this.renderLoadingShell();
     await this.loadMeta();
     this.renderShell();
     await this.loadRecords();
@@ -76,6 +77,28 @@ const CrudPage = {
     this.bindEvents();
     this.renderForm();
     if (this.moduleKey === "reports") this.renderReportRunner();
+    this.renderTableLoading();
+  },
+
+  renderLoadingShell() {
+    const page = document.querySelector("#pageContent");
+    if (!page) return;
+    page.innerHTML = `
+      <div class="page-header">
+        <div>
+          <h1>Loading module</h1>
+          <p class="muted">Preparing records and permissions...</p>
+        </div>
+      </div>
+      <section class="stats-grid">
+        ${Array.from({ length: 4 }, () => `<article class="card stat-card skeleton-card"><span class="skeleton-line"></span><strong class="skeleton-line"></strong></article>`).join("")}
+      </section>
+      <section class="card data-card">
+        <div class="skeleton-table">
+          ${Array.from({ length: 8 }, () => `<span class="skeleton-line"></span>`).join("")}
+        </div>
+      </section>
+    `;
   },
 
   bindEvents() {
@@ -130,6 +153,7 @@ const CrudPage = {
   },
 
   async loadRecords() {
+    this.renderTableLoading();
     const params = new URLSearchParams({
       page: this.state.page,
       per_page: this.state.perPage,
@@ -145,6 +169,17 @@ const CrudPage = {
       this.renderPagination(result.pagination);
     } catch (error) {
       toast(error.message);
+    }
+  },
+
+  renderTableLoading() {
+    const tableWrap = document.querySelector("#tableWrap");
+    const pagination = document.querySelector("#pagination");
+    if (tableWrap) {
+      tableWrap.innerHTML = `<div class="skeleton-table">${Array.from({ length: 8 }, () => `<span class="skeleton-line"></span>`).join("")}</div>`;
+    }
+    if (pagination) {
+      pagination.innerHTML = `<span class="skeleton-line short"></span>`;
     }
   },
 

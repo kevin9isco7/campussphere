@@ -86,8 +86,8 @@ const AuthFlow = {
   },
 
   state: {
-    institution: sessionStorage.getItem("selectedInstitution") || "",
-    role: sessionStorage.getItem("selectedRole") || "",
+    institution: readSessionValue("selectedInstitution"),
+    role: readSessionValue("selectedRole"),
   },
   branding: {},
 
@@ -106,39 +106,70 @@ const AuthFlow = {
       return;
     }
     this.root = root;
-    await this.loadBranding();
+    this.loadCachedBranding();
     this.renderInstitutionSelection();
+    this.refreshBranding();
   },
 
-  async loadBranding() {
-    try {
-      const result = await Api.get("/public/settings");
-      this.branding = result.settings || {};
-      if (this.branding.brand_color) {
-        document.documentElement.style.setProperty("--primary", this.branding.brand_color);
-      }
-      if (this.branding.favicon) {
-        let favicon = document.querySelector("link[rel='icon']");
-        if (!favicon) {
-          favicon = document.createElement("link");
-          favicon.rel = "icon";
-          document.head.appendChild(favicon);
-        }
-        favicon.href = this.branding.favicon;
-      }
-    } catch (_error) {
-      this.branding = {};
+  loadCachedBranding() {
+    const cached = readJsonStorage("campussphere.publicBranding");
+    if (cached && typeof cached === "object") {
+      this.branding = cached;
+      this.applyBranding();
     }
+  },
+
+  async refreshBranding() {
+    try {
+      const result = await Api.get("/public/settings", { timeoutMs: 8000 });
+      this.branding = result.settings || {};
+      writeJsonStorage("campussphere.publicBranding", this.branding);
+      this.applyBranding();
+      this.updateBrandNodes();
+    } catch (_error) {
+      this.applyBranding();
+    }
+  },
+
+  applyBranding() {
+    if (this.branding.brand_color) {
+      document.documentElement.style.setProperty("--primary", this.branding.brand_color);
+    }
+    if (this.branding.favicon) {
+      let favicon = document.querySelector("link[rel='icon']");
+      if (!favicon) {
+        favicon = document.createElement("link");
+        favicon.rel = "icon";
+        document.head.appendChild(favicon);
+      }
+      favicon.href = this.branding.favicon;
+    }
+  },
+
+  updateBrandNodes() {
+    if (!this.root) return;
+    const logo = resolveAuthAsset(this.branding.school_logo, "assets/images/logo.svg");
+    const name = this.branding.school_name || "CampusSphere Enterprise";
+    this.root.querySelectorAll(".auth-brand img").forEach((image) => {
+      image.src = logo;
+    });
+    this.root.querySelectorAll(".auth-brand strong").forEach((node) => {
+      node.textContent = name;
+    });
   },
 
   saveContext(institutionKey, roleKey = "") {
     this.state.institution = institutionKey;
     this.state.role = roleKey;
-    sessionStorage.setItem("selectedInstitution", institutionKey);
-    if (roleKey) {
-      sessionStorage.setItem("selectedRole", roleKey);
-    } else {
-      sessionStorage.removeItem("selectedRole");
+    try {
+      sessionStorage.setItem("selectedInstitution", institutionKey);
+      if (roleKey) {
+        sessionStorage.setItem("selectedRole", roleKey);
+      } else {
+        sessionStorage.removeItem("selectedRole");
+      }
+    } catch (_error) {
+      // The in-memory state is enough for the current flow if session storage is unavailable.
     }
   },
 
@@ -313,7 +344,11 @@ const AuthFlow = {
       });
       Api.setToken(result.token);
       Api.setUser(result.user);
-      sessionStorage.setItem("portalContext", JSON.stringify(this.getContext()));
+      try {
+        sessionStorage.setItem("portalContext", JSON.stringify(this.getContext()));
+      } catch (_error) {
+        // The dashboard can still load using the authenticated user when session storage is unavailable.
+      }
       location.href = this.dashboardPath();
     } catch (error) {
       toast(error.message);
@@ -376,6 +411,31 @@ function resolveAuthAsset(value, fallback) {
   if (/^(https?:|data:|\/)/.test(value)) return value;
   if (value.includes("assets/images/logo.svg")) return fallback;
   return value;
+}
+
+function readSessionValue(key) {
+  try {
+    return sessionStorage.getItem(key) || "";
+  } catch (_error) {
+    return "";
+  }
+}
+
+function readJsonStorage(key) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function writeJsonStorage(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (_error) {
+    // Cache is optional; the app can run without persistent browser storage.
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => AuthFlow.init());

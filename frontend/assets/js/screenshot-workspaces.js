@@ -11,10 +11,38 @@ const EnhancedWorkspaces = {
   async init(moduleKey) {
     this.moduleKey = moduleKey;
     await buildLayout(moduleKey);
+    this.renderLoadingShell();
     const metaResult = await Api.get(`/modules/${moduleKey}/meta`);
     this.meta = metaResult.module;
     await this.loadRecords();
     this.render();
+  },
+
+  renderLoadingShell() {
+    const page = document.querySelector("#pageContent");
+    if (!page) return;
+    page.innerHTML = `
+      <section class="page-header">
+        <div>
+          <h1>Loading workspace</h1>
+          <p class="muted">Preparing records, metrics, and tools...</p>
+        </div>
+      </section>
+      <section class="stats-grid compact-stats">
+        ${Array.from({ length: 5 }, () => `<article class="card stat-card skeleton-card"><span class="skeleton-line"></span><strong class="skeleton-line"></strong></article>`).join("")}
+      </section>
+      <section class="card data-card enhanced-card">
+        <div class="card-toolbar">
+          <div class="skeleton-stack">
+            <span class="skeleton-line short"></span>
+            <span class="skeleton-line"></span>
+          </div>
+        </div>
+        <div class="skeleton-table">
+          ${Array.from({ length: 8 }, () => `<span class="skeleton-line"></span>`).join("")}
+        </div>
+      </section>
+    `;
   },
 
   async loadRecords() {

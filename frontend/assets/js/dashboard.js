@@ -24,8 +24,10 @@ async function renderDashboard() {
       <div class="card data-card grid-span-full"><h2>Recently Enrolled Students</h2><div class="table-wrap" id="recentStudents"></div></div>
     </section>
   `;
+  renderDashboardLoading();
 
   async function load() {
+    renderDashboardLoading();
     try {
       const result = await Api.get("/dashboard/summary");
       document.querySelector("#statsGrid").innerHTML = result.cards
@@ -42,6 +44,22 @@ async function renderDashboard() {
   document.querySelector("#printDashboard").addEventListener("click", () => window.print());
   document.querySelector("#refreshDashboard").addEventListener("click", load);
   load();
+}
+
+function renderDashboardLoading() {
+  const statsGrid = document.querySelector("#statsGrid");
+  const attendanceChart = document.querySelector("#attendanceChart");
+  const financeChart = document.querySelector("#financeChart");
+  const recentStudents = document.querySelector("#recentStudents");
+  if (statsGrid) {
+    statsGrid.innerHTML = Array.from({ length: 6 }, () => `<article class="card stat-card skeleton-card"><span class="skeleton-line"></span><strong class="skeleton-line"></strong></article>`).join("");
+  }
+  const chartSkeleton = Array.from({ length: 4 }, () => `<div class="chart-row"><span class="skeleton-line short"></span><div class="skeleton-line"></div><strong class="skeleton-line short"></strong></div>`).join("");
+  if (attendanceChart) attendanceChart.innerHTML = chartSkeleton;
+  if (financeChart) financeChart.innerHTML = chartSkeleton;
+  if (recentStudents) {
+    recentStudents.innerHTML = `<div class="skeleton-table">${Array.from({ length: 5 }, () => `<span class="skeleton-line"></span>`).join("")}</div>`;
+  }
 }
 
 function renderBars(selector, rows, labelKey) {

@@ -144,42 +144,12 @@ async function buildLayout(activeModule) {
     </section>
   `;
 
-  try {
-    const [modulesResult, settingsResult] = await Promise.all([
-      Api.get("/modules"),
-      Api.get("/modules/settings?search=&per_page=20").catch(() => ({ records: [] })),
-    ]);
-
-    const settings = Object.fromEntries(settingsResult.records.map((row) => [row.setting_key, row.setting_value]));
-    document.querySelector("#schoolName").textContent = settings.school_name || "Enterprise School";
-    document.querySelector("#academicYear").textContent = settings.current_academic_year || "Academic Year";
-    if (settings.school_logo) {
-      document.querySelector("#brandLogo").src = resolveShellAsset(settings.school_logo, "../../assets/images/logo.svg");
-    }
-    if (settings.favicon) {
-      let favicon = document.querySelector("link[rel='icon']");
-      if (!favicon) {
-        favicon = document.createElement("link");
-        favicon.rel = "icon";
-        document.head.appendChild(favicon);
-      }
-      favicon.href = settings.favicon;
-    }
-
-    const nav = document.querySelector("#navList");
-    const portalModules = filterModulesForPortal(modulesResult.modules);
-    nav.innerHTML = portalModules
-      .map((module) => {
-        const href = moduleHref(module.key);
-        const active = module.key === activeModule ? "active" : "";
-        return `<a class="nav-link ${active}" href="${href}" title="${escapeHtml(module.label)}">
-          <span class="nav-icon">${icons[module.key] || icons.dashboard}</span>
-          <span class="nav-text">${escapeHtml(module.label)}</span>
-        </a>`;
-      })
-      .join("");
-  } catch (error) {
-    toast(error.message);
+  const cachedShell = readShellCache();
+  if (cachedShell.settings) applyShellSettings(cachedShell.settings);
+  if (cachedShell.modules.length) {
+    renderShellNavigation(cachedShell.modules, activeModule);
+  } else {
+    renderShellNavigationLoading();
   }
 
   const user = Api.user();
@@ -242,6 +212,90 @@ async function buildLayout(activeModule) {
     document.documentElement.dataset.theme = next;
     localStorage.setItem("theme", next);
   });
+
+  hydrateShell(activeModule);
+}
+
+async function hydrateShell(activeModule) {
+  try {
+    const [modulesResult, settingsResult] = await Promise.all([
+      Api.get("/modules", { timeoutMs: 12000 }),
+      Api.get("/modules/settings?search=&per_page=20", { timeoutMs: 12000 }).catch(() => ({ records: [] })),
+    ]);
+    const modules = modulesResult.modules || [];
+    const settings = Object.fromEntries((settingsResult.records || []).map((row) => [row.setting_key, row.setting_value]));
+    applyShellSettings(settings);
+    renderShellNavigation(modules, activeModule);
+    writeShellCache({ modules, settings, cachedAt: Date.now() });
+  } catch (error) {
+    const nav = document.querySelector("#navList");
+    if (nav && nav.querySelector(".nav-loading")) {
+      nav.innerHTML = `<div class="nav-loading">Modules unavailable. Refresh to retry.</div>`;
+    }
+    toast(error.message);
+  }
+}
+
+function applyShellSettings(settings = {}) {
+  const schoolName = document.querySelector("#schoolName");
+  const academicYear = document.querySelector("#academicYear");
+  const brandLogo = document.querySelector("#brandLogo");
+  if (schoolName) schoolName.textContent = settings.school_name || "Enterprise School";
+  if (academicYear) academicYear.textContent = settings.current_academic_year || "Academic Year";
+  if (brandLogo && settings.school_logo) {
+    brandLogo.src = resolveShellAsset(settings.school_logo, "../../assets/images/logo.svg");
+  }
+  if (settings.favicon) {
+    let favicon = document.querySelector("link[rel='icon']");
+    if (!favicon) {
+      favicon = document.createElement("link");
+      favicon.rel = "icon";
+      document.head.appendChild(favicon);
+    }
+    favicon.href = settings.favicon;
+  }
+}
+
+function renderShellNavigation(modules, activeModule) {
+  const nav = document.querySelector("#navList");
+  if (!nav) return;
+  const portalModules = filterModulesForPortal(modules);
+  nav.innerHTML = portalModules
+    .map((module) => {
+      const href = moduleHref(module.key);
+      const active = module.key === activeModule ? "active" : "";
+      return `<a class="nav-link ${active}" href="${href}" title="${escapeHtml(module.label)}">
+        <span class="nav-icon">${icons[module.key] || icons.dashboard}</span>
+        <span class="nav-text">${escapeHtml(module.label)}</span>
+      </a>`;
+    })
+    .join("");
+}
+
+function renderShellNavigationLoading() {
+  const nav = document.querySelector("#navList");
+  if (!nav) return;
+  nav.innerHTML = `<div class="nav-loading"><span class="skeleton-line"></span><span class="skeleton-line short"></span><span class="skeleton-line"></span></div>`;
+}
+
+function readShellCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem("campussphere.shellCache") || "{}");
+    return {
+      modules: Array.isArray(cached.modules) ? cached.modules : [],
+      settings: cached.settings && typeof cached.settings === "object" ? cached.settings : null,
+    };
+  } catch (_error) {
+    return { modules: [], settings: null };
+  }
+}
+
+function writeShellCache(payload) {
+  try {
+    localStorage.setItem("campussphere.shellCache", JSON.stringify(payload));
+  } catch (_error) {
+    // Cache is optional; the shell still hydrates from the API when storage is unavailable.
+  }
 }
 
 function resolveShellAsset(value, fallback) {

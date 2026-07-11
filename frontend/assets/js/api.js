@@ -27,16 +27,35 @@ const Api = {
   },
 
   async request(path, options = {}) {
+    const { timeoutMs = 30000, ...fetchOptions } = options;
     const headers = new Headers(options.headers || {});
-    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
-    if (!headers.has("Content-Type") && options.body && !isFormData) {
+    const isFormData = typeof FormData !== "undefined" && fetchOptions.body instanceof FormData;
+    if (!headers.has("Content-Type") && fetchOptions.body && !isFormData) {
       headers.set("Content-Type", "application/json");
     }
     if (this.token()) {
       headers.set("Authorization", `Bearer ${this.token()}`);
     }
 
-    const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+    let timeoutId = null;
+    if (timeoutMs && typeof AbortController !== "undefined" && !fetchOptions.signal) {
+      const controller = new AbortController();
+      fetchOptions.signal = controller.signal;
+      timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+    }
+
+    let response;
+    try {
+      response = await fetch(`${API_BASE}${path}`, { ...fetchOptions, headers });
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new Error("Request timed out. Please try again.");
+      }
+      throw error;
+    } finally {
+      if (timeoutId) window.clearTimeout(timeoutId);
+    }
+
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const message = payload.error?.message || "Request failed.";
@@ -54,24 +73,24 @@ const Api = {
     return payload;
   },
 
-  get(path) {
-    return this.request(path);
+  get(path, options = {}) {
+    return this.request(path, options);
   },
 
-  post(path, data) {
-    return this.request(path, { method: "POST", body: JSON.stringify(data) });
+  post(path, data, options = {}) {
+    return this.request(path, { ...options, method: "POST", body: JSON.stringify(data) });
   },
 
-  put(path, data) {
-    return this.request(path, { method: "PUT", body: JSON.stringify(data) });
+  put(path, data, options = {}) {
+    return this.request(path, { ...options, method: "PUT", body: JSON.stringify(data) });
   },
 
-  upload(path, formData) {
-    return this.request(path, { method: "POST", body: formData });
+  upload(path, formData, options = {}) {
+    return this.request(path, { ...options, method: "POST", body: formData });
   },
 
-  delete(path) {
-    return this.request(path, { method: "DELETE" });
+  delete(path, options = {}) {
+    return this.request(path, { ...options, method: "DELETE" });
   },
 };
 
