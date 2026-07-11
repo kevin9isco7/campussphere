@@ -24,7 +24,7 @@ const AuthFlow = {
       name: "Secondary School",
       icon: AuthIcons.school,
       badge: "School Operations",
-      headline: "Daily school administration, parents, classes, and learner services.",
+      headline: "Run learner records, guardians, classes, finance, and daily school services.",
       scope: "Best for basic, junior, senior, and K-12 institutions that need tight control over learners, guardians, classes, fees, daily attendance, and school services.",
       description:
         "Manage secondary school operations including students, teachers, parents, attendance, examinations, finance, library, transport, hostel, and administration.",
@@ -55,7 +55,7 @@ const AuthFlow = {
       name: "University",
       icon: AuthIcons.university,
       badge: "Higher Education",
-      headline: "Faculties, departments, registrar services, and academic governance.",
+      headline: "Coordinate faculties, departments, registrar workflows, and campus services.",
       scope: "Best for universities, colleges, institutes, and multi-faculty campuses that need registrar workflows, departmental control, lecturer portals, courses, examinations, and student services.",
       description:
         "Manage faculties, departments, lecturers, students, registrar services, examinations, finance, hostel, library, and academic administration.",
@@ -174,7 +174,7 @@ const AuthFlow = {
 
   institutionCard(institution) {
     const selected = this.state.institution === institution.key ? "selected" : "";
-    const capabilities = institution.capabilities.slice(0, 6);
+    const focusAreas = institution.moduleGroups.slice(0, 3);
     return `
       <article class="selection-card institution-card standard-institution ${selected}" data-kind="${institution.key}" data-institution="${institution.key}" tabindex="0">
         <div class="standard-institution-top">
@@ -184,18 +184,10 @@ const AuthFlow = {
         <div class="institution-body standard-institution-body">
           <div>
             <h2>${escapeHtml(institution.name)}</h2>
-            <strong class="institution-headline">${escapeHtml(institution.headline)}</strong>
-            <p>${escapeHtml(institution.description)}</p>
+            <p class="institution-headline">${escapeHtml(institution.headline)}</p>
           </div>
-          <div class="institution-scope standard-scope">
-            <span>Best fit</span>
-            <p>${escapeHtml(institution.scope)}</p>
-          </div>
-          <div class="capability-list compact-capabilities">
-            ${capabilities.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
-          </div>
-          <div class="institution-metrics compact-metrics">
-            ${institution.metrics.map((metric) => `<span><strong>${escapeHtml(metric.value)}</strong><small>${escapeHtml(metric.label)}</small></span>`).join("")}
+          <div class="institution-focus-list">
+            ${focusAreas.map((group) => `<span>${escapeHtml(group.label)}</span>`).join("")}
           </div>
           <button class="btn btn-primary institution-continue" data-continue-institution="${institution.key}" type="button">Continue</button>
         </div>
