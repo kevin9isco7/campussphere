@@ -37,3 +37,8 @@ Thumbs.db
 .idea/
 .agents/
 .codex/
+
+# Android local machine config
+local.properties
+mobile/android/debug.keystore
+mobile/android/app/build/
