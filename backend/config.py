@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
 
 try:
     from dotenv import load_dotenv
@@ -30,17 +31,42 @@ def env_bool(*names, default=False):
     return value in {"1", "true", "yes", "on"}
 
 
+def database_url_config():
+    database_url = env_value("DATABASE_URL", "MYSQL_URL", "MYSQL_URI", "AIVEN_DATABASE_URL", "AIVEN_SERVICE_URI", default="", allow_empty=True)
+    if not database_url:
+        return {}
+    parsed = urlparse(database_url)
+    query = parse_qs(parsed.query)
+    ssl_mode = (
+        query.get("ssl-mode")
+        or query.get("ssl_mode")
+        or query.get("sslmode")
+        or [""]
+    )[0]
+    return {
+        "host": parsed.hostname or "",
+        "port": parsed.port or 3306,
+        "name": unquote((parsed.path or "").lstrip("/")) or "",
+        "user": unquote(parsed.username or ""),
+        "password": unquote(parsed.password or ""),
+        "ssl_mode": ssl_mode,
+    }
+
+
+DATABASE_URL_CONFIG = database_url_config()
+
+
 class Config:
     APP_ENV = env_value("APP_ENV", default="production")
     DEBUG = env_bool("DEBUG", default=False)
     SECRET_KEY = env_value("SECRET_KEY", "APP_SECRET", default="change-this-long-random-secret")
 
-    DATABASE_HOST = env_value("DATABASE_HOST", "DB_HOST", default="127.0.0.1")
-    DATABASE_PORT = env_int("DATABASE_PORT", "DB_PORT", default=3306)
-    DATABASE_NAME = env_value("DATABASE_NAME", "DB_NAME", default="school_management")
-    DATABASE_USER = env_value("DATABASE_USER", "DB_USER", default="root")
-    DATABASE_PASSWORD = env_value("DATABASE_PASSWORD", "DB_PASSWORD", default="", allow_empty=True)
-    DATABASE_SSL_MODE = env_value("DATABASE_SSL_MODE", default="", allow_empty=True)
+    DATABASE_HOST = env_value("DATABASE_HOST", "DB_HOST", default=DATABASE_URL_CONFIG.get("host") or "127.0.0.1")
+    DATABASE_PORT = env_int("DATABASE_PORT", "DB_PORT", default=DATABASE_URL_CONFIG.get("port") or 3306)
+    DATABASE_NAME = env_value("DATABASE_NAME", "DB_NAME", default=DATABASE_URL_CONFIG.get("name") or "school_management")
+    DATABASE_USER = env_value("DATABASE_USER", "DB_USER", default=DATABASE_URL_CONFIG.get("user") or "root")
+    DATABASE_PASSWORD = env_value("DATABASE_PASSWORD", "DB_PASSWORD", default=DATABASE_URL_CONFIG.get("password") or "", allow_empty=True)
+    DATABASE_SSL_MODE = env_value("DATABASE_SSL_MODE", default=DATABASE_URL_CONFIG.get("ssl_mode") or "", allow_empty=True)
     DATABASE_SSL_CA = env_value("DATABASE_SSL_CA", default="", allow_empty=True)
     DATABASE_CONNECT_TIMEOUT = env_int("DATABASE_CONNECT_TIMEOUT", default=10)
 

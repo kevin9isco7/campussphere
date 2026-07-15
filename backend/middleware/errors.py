@@ -1,4 +1,4 @@
-from pymysql import IntegrityError
+from pymysql import IntegrityError, MySQLError
 
 from config import Config
 
@@ -32,6 +32,18 @@ def register_error_handlers(app):
                 "status": 409,
             }
         }, 409
+
+    @app.errorhandler(MySQLError)
+    def handle_database_error(error):
+        app.logger.warning("Database operation failed: %s", error.__class__.__name__)
+        details = {"database": str(error)} if Config.DEBUG or Config.APP_ENV == "development" else {}
+        return {
+            "error": {
+                "message": "Database connection unavailable. Please verify the database environment variables and try again.",
+                "details": details,
+                "status": 503,
+            }
+        }, 503
 
     @app.errorhandler(404)
     def handle_not_found(_error):
