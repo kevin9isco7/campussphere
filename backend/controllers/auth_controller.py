@@ -7,6 +7,48 @@ from middleware.errors import ApiError
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 
+def _column_exists(cursor, table_name, column_name):
+    cursor.execute(
+        """
+        SELECT 1
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = %s
+          AND COLUMN_NAME = %s
+        LIMIT 1
+        """,
+        (table_name, column_name),
+    )
+    return cursor.fetchone() is not None
+
+
+def _student_applicant_context(user_id, role_key, portal_key):
+    if role_key != "student" or portal_key != "student":
+        return None
+    with db_cursor() as cursor:
+        if not _column_exists(cursor, "admissions", "user_id"):
+            return None
+        cursor.execute(
+            """
+            SELECT id, status, payment_status
+            FROM admissions
+            WHERE user_id = %s
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (user_id,),
+        )
+        application = cursor.fetchone()
+    if not application:
+        return None
+    return {
+        "application_id": application["id"],
+        "status": application["status"],
+        "payment_status": application.get("payment_status"),
+        "requires_application": application["status"] not in {"Admitted", "Enrolled"},
+    }
+
+
 @auth_bp.post("/login")
 def login():
     data = request.get_json(silent=True) or {}
@@ -45,6 +87,7 @@ def login():
         cursor.execute("UPDATE users SET last_login_at = NOW() WHERE id = %s", (user["id"],))
 
     token = create_token(user)
+    applicant = _student_applicant_context(user["id"], user["role_key"], user["portal_key"])
     return {
         "token": token,
         "user": {
@@ -56,6 +99,7 @@ def login():
             "institution": user["institution_type"],
             "portal": user["portal_key"],
         },
+        "applicant": applicant,
     }
 
 

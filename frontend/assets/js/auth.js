@@ -316,6 +316,12 @@ const AuthFlow = {
             </label>
             <button class="btn btn-primary" type="submit">Sign in</button>
           </form>
+          ${role.key === "student" ? `
+            <div class="auth-secondary-action">
+              <span>New student?</span>
+              <button class="text-button" id="createApplicantAccount" type="button">Create admission account</button>
+            </div>
+          ` : ""}
         </section>
         <section class="auth-visual" aria-hidden="true">
           <div class="login-context-card">
@@ -330,6 +336,108 @@ const AuthFlow = {
 
     this.root.querySelector("#backToPortals").addEventListener("click", () => this.renderPortalSelection());
     this.root.querySelector("#loginForm").addEventListener("submit", (event) => this.login(event));
+    this.root.querySelector("#createApplicantAccount")?.addEventListener("click", () => this.renderStudentRegistration());
+  },
+
+  renderStudentRegistration() {
+    const institution = this.institutions[this.state.institution];
+    const role = institution?.roles.find((item) => item.key === "student");
+    if (!institution || !role) {
+      this.renderInstitutionSelection();
+      return;
+    }
+
+    const levelLabel = institution.key === "university" ? "Programme / Faculty applying for" : "Grade / Class applying for";
+    this.root.innerHTML = `
+      <main class="auth-page contextual-login ${this.hasBackgroundMedia() ? "with-media" : ""}">
+        ${this.backgroundMarkup()}
+        <section class="auth-panel applicant-auth-panel">
+          ${this.brandMarkup()}
+          <button class="btn back-link" id="backToStudentLogin" type="button">Back to student login</button>
+          <span class="eyebrow">${escapeHtml(institution.name)}</span>
+          <h1>Create Student Admission Account</h1>
+          <p class="muted">Start your admission request, upload documents, pay the non-refundable registration fee, and wait for verification.</p>
+          <form class="form-stack" id="applicantRegisterForm">
+            <div class="form-grid two">
+              <label class="field">
+                <span>First name</span>
+                <input class="input" name="first_name" autocomplete="given-name" required>
+              </label>
+              <label class="field">
+                <span>Last name</span>
+                <input class="input" name="last_name" autocomplete="family-name" required>
+              </label>
+            </div>
+            <label class="field">
+              <span>Email</span>
+              <input class="input" name="email" type="email" autocomplete="email" required>
+            </label>
+            <label class="field">
+              <span>Phone</span>
+              <input class="input" name="phone" type="tel" autocomplete="tel">
+            </label>
+            <label class="field">
+              <span>${escapeHtml(levelLabel)}</span>
+              <input class="input" name="desired_level" required>
+            </label>
+            <div class="form-grid two">
+              <label class="field">
+                <span>Password</span>
+                <input class="input" name="password" type="password" autocomplete="new-password" minlength="8" required>
+              </label>
+              <label class="field">
+                <span>Confirm password</span>
+                <input class="input" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required>
+              </label>
+            </div>
+            <button class="btn btn-primary" type="submit">Create account and continue</button>
+          </form>
+        </section>
+        <section class="auth-visual" aria-hidden="true">
+          <div class="login-context-card">
+            <span class="context-icon">${role.icon}</span>
+            <h2>${escapeHtml(institution.name)}</h2>
+            <strong>Student Admission</strong>
+            <p>Complete your application, upload verified documents, and track your admission status.</p>
+          </div>
+        </section>
+      </main>
+    `;
+
+    this.root.querySelector("#backToStudentLogin").addEventListener("click", () => this.renderLogin());
+    this.root.querySelector("#applicantRegisterForm").addEventListener("submit", (event) => this.registerApplicant(event));
+  },
+
+  async registerApplicant(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector("button[type='submit']");
+    if (form.password.value !== form.confirm_password.value) {
+      toast("Passwords do not match.");
+      return;
+    }
+    button.disabled = true;
+    button.textContent = "Creating account...";
+    try {
+      const result = await Api.post("/applicants/register", {
+        institution: this.state.institution,
+        first_name: form.first_name.value.trim(),
+        last_name: form.last_name.value.trim(),
+        email: form.email.value.trim(),
+        phone: form.phone.value.trim(),
+        desired_level: form.desired_level.value.trim(),
+        password: form.password.value,
+      });
+      Api.setToken(result.token);
+      Api.setUser(result.user);
+      this.saveApplicantContext(result.applicant);
+      location.href = "pages/applicant/index.html";
+    } catch (error) {
+      toast(error.message);
+    } finally {
+      button.disabled = false;
+      button.textContent = "Create account and continue";
+    }
   },
 
   async login(event) {
@@ -352,6 +460,11 @@ const AuthFlow = {
       } catch (_error) {
         // The dashboard can still load using the authenticated user when session storage is unavailable.
       }
+      if (result.applicant?.requires_application) {
+        this.saveApplicantContext(result.applicant);
+        location.href = "pages/applicant/index.html";
+        return;
+      }
       location.href = this.dashboardPath();
     } catch (error) {
       toast(error.message);
@@ -363,6 +476,18 @@ const AuthFlow = {
 
   dashboardPath() {
     return "pages/dashboard/index.html";
+  },
+
+  saveApplicantContext(applicant) {
+    try {
+      sessionStorage.setItem("portalContext", JSON.stringify({
+        ...this.getContext(),
+        applicant,
+        dashboardTitle: "Student Admission Application",
+      }));
+    } catch (_error) {
+      // Applicant pages can still recover the context from the authenticated user.
+    }
   },
 
   getContext() {

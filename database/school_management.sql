@@ -78,6 +78,8 @@ CREATE TABLE academic_years (
 
 CREATE TABLE admissions (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NULL,
+  institution_type ENUM('secondary','university') NOT NULL DEFAULT 'secondary',
   application_no VARCHAR(80) NOT NULL UNIQUE,
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NOT NULL,
@@ -87,12 +89,39 @@ CREATE TABLE admissions (
   guardian_name VARCHAR(180) NOT NULL,
   guardian_phone VARCHAR(40) NOT NULL,
   guardian_email VARCHAR(190) NULL,
-  status ENUM('Submitted','Reviewed','Accepted','Rejected','Enrolled') NOT NULL DEFAULT 'Submitted',
+  status ENUM('Draft','Payment Pending','Submitted','Reviewed','Under Review','Documents Verified','Accepted','Admitted','Rejected','Enrolled') NOT NULL DEFAULT 'Draft',
+  payment_status ENUM('Not Paid','Paid','Waived') NOT NULL DEFAULT 'Not Paid',
+  registration_fee_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+  registration_fee_reference VARCHAR(120) NULL,
+  registration_fee_paid_at DATETIME NULL,
+  submitted_at DATETIME NULL,
+  verified_at DATETIME NULL,
+  verification_notes TEXT NULL,
   notes TEXT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_admissions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
   INDEX idx_admissions_status (status),
+  INDEX idx_admissions_user (user_id),
+  INDEX idx_admissions_institution_status (institution_type, status),
+  INDEX idx_admissions_payment_status (payment_status),
   INDEX idx_admissions_name (last_name, first_name)
+) ENGINE=InnoDB;
+
+CREATE TABLE admission_documents (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  admission_id INT UNSIGNED NOT NULL,
+  document_type ENUM('Birth Certificate','Previous Report','Passport Photo','National ID','Transcript','Recommendation','Other') NOT NULL DEFAULT 'Other',
+  file_name VARCHAR(255) NOT NULL,
+  file_path VARCHAR(500) NOT NULL,
+  mime_type VARCHAR(120) NULL,
+  status ENUM('Uploaded','Verified','Rejected') NOT NULL DEFAULT 'Uploaded',
+  notes TEXT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_admission_documents_admission FOREIGN KEY (admission_id) REFERENCES admissions(id) ON DELETE CASCADE,
+  INDEX idx_admission_documents_admission (admission_id),
+  INDEX idx_admission_documents_status (status)
 ) ENGINE=InnoDB;
 
 CREATE TABLE teachers (

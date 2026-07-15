@@ -15,7 +15,7 @@ MODULES = {
             "guardian_name": {"type": "text", "required": True},
             "guardian_phone": {"type": "tel", "required": True},
             "guardian_email": {"type": "email"},
-            "status": {"type": "select", "required": True, "options": ["Submitted", "Reviewed", "Accepted", "Rejected", "Enrolled"]},
+            "status": {"type": "select", "required": True, "options": ["Draft", "Payment Pending", "Submitted", "Reviewed", "Under Review", "Documents Verified", "Accepted", "Admitted", "Rejected", "Enrolled"]},
             "notes": {"type": "textarea"},
         },
     },

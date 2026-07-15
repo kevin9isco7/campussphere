@@ -508,7 +508,7 @@ function admissionFields() {
     { name: "guardian_name", label: "Guardian", required: true },
     { name: "guardian_phone", label: "Guardian Phone", type: "tel", required: true },
     { name: "guardian_email", label: "Guardian Email", type: "email" },
-    { name: "status", label: "Status", type: "select", required: true, options: ["Submitted", "Reviewed", "Accepted", "Rejected", "Enrolled"], value: "Submitted" },
+    { name: "status", label: "Status", type: "select", required: true, options: ["Draft", "Payment Pending", "Submitted", "Reviewed", "Under Review", "Documents Verified", "Accepted", "Admitted", "Rejected", "Enrolled"], value: "Submitted" },
     { name: "notes", label: "Notes", type: "textarea" },
   ];
 }
