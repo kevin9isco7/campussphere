@@ -421,11 +421,11 @@ const AuthFlow = {
   openApiSettings() {
     const currentUrl = window.CONFIG?.API_URL || "";
     const nextUrl = window.prompt(
-      "Enter the backend API URL. Example: https://your-render-service.onrender.com/api\n\nLeave blank to use the default configured URL.",
+      "Enter the backend URL. You can paste either https://your-render-service.onrender.com or https://your-render-service.onrender.com/api.\n\nLeave blank to use the default configured URL.",
       currentUrl
     );
     if (nextUrl === null) return;
-    const cleaned = nextUrl.trim().replace(/\/$/, "");
+      const cleaned = nextUrl.trim().replace(/\/$/, "");
     try {
       if (cleaned) {
         localStorage.setItem("apiBase", cleaned);

@@ -15,9 +15,26 @@
     overrides.API_URL ||
     (isLocal ? "http://127.0.0.1:5000/api" : productionApiUrl);
 
+  function normalizeApiUrl(url) {
+    const cleaned = String(url || "").trim().replace(/\/$/, "");
+    if (!cleaned) return cleaned;
+    try {
+      const parsed = new URL(cleaned);
+      const path = parsed.pathname.replace(/\/$/, "");
+      if (!path || path === "/") {
+        parsed.pathname = "/api";
+      } else if (!path.endsWith("/api")) {
+        parsed.pathname = `${path}/api`;
+      }
+      return parsed.toString().replace(/\/$/, "");
+    } catch (_error) {
+      return cleaned;
+    }
+  }
+
   window.CONFIG = Object.freeze({
     APP_NAME: overrides.APP_NAME || "CampusSphere",
-    API_URL: apiUrl.replace(/\/$/, ""),
+    API_URL: normalizeApiUrl(apiUrl),
     APP_ENV: overrides.APP_ENV || (isLocal ? "local" : "production"),
   });
 })(window);
