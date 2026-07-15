@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -23,13 +25,33 @@ def create_app():
     register_routes(app)
     register_error_handlers(app)
 
+    def deployment_info():
+        return {
+            "service": "CampusSphere API",
+            "status": "healthy",
+            "app_env": Config.APP_ENV,
+            "commit": os.environ.get("RENDER_GIT_COMMIT") or os.environ.get("SOURCE_VERSION") or os.environ.get("GIT_COMMIT") or "unknown",
+            "render_service": os.environ.get("RENDER_SERVICE_NAME") or os.environ.get("RENDER_EXTERNAL_HOSTNAME") or "unknown",
+            "database_configured": bool(Config.DATABASE_HOST and Config.DATABASE_NAME and Config.DATABASE_USER),
+            "database_ssl_mode": Config.DATABASE_SSL_MODE or "disabled",
+            "cors_origins": Config.CORS_ORIGINS,
+        }
+
     @app.get("/")
     def root():
-        return {"status": "healthy", "service": "CampusSphere API", "health": "/api/health"}
+        payload = deployment_info()
+        payload["health"] = "/api/health"
+        payload["database_health"] = "/api/health/database"
+        payload["version"] = "/api/version"
+        return payload
 
     @app.get("/api/health")
     def health():
         return {"status": "healthy", "service": "CampusSphere API"}
+
+    @app.get("/api/version")
+    def version():
+        return deployment_info()
 
     @app.get("/api/health/database")
     def database_health():
