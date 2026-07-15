@@ -153,17 +153,16 @@ Configure Render environment variables:
 ```text
 APP_ENV=production
 SECRET_KEY=<secure-secret>
-DATABASE_HOST=<managed-mysql-host>
-DATABASE_NAME=<database-name>
-DATABASE_USER=<database-user>
-DATABASE_PASSWORD=<database-password>
-DATABASE_PORT=3306
+DATABASE_URL=<managed-mysql-service-uri>
+DATABASE_SSL_MODE=REQUIRED
 CORS_ORIGINS=<vercel-frontend-url>
 OPENAI_API_KEY=
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 ```
+
+For Aiven MySQL, use the full Service URI as `DATABASE_URL`. Do not put the full URI in `DATABASE_HOST`; if separate fields are used instead, set `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USER`, `DATABASE_PASSWORD`, and `DATABASE_SSL_MODE=REQUIRED`.
 
 ## Vercel Frontend Preparation
 

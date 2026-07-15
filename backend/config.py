@@ -16,6 +16,8 @@ def env_value(*names, default=None, allow_empty=False):
     for name in names:
         if name in os.environ:
             value = os.environ.get(name)
+            if isinstance(value, str):
+                value = value.strip()
             if value or allow_empty:
                 return value
     return default
@@ -32,7 +34,19 @@ def env_bool(*names, default=False):
 
 
 def database_url_config():
-    database_url = env_value("DATABASE_URL", "MYSQL_URL", "MYSQL_URI", "AIVEN_DATABASE_URL", "AIVEN_SERVICE_URI", default="", allow_empty=True)
+    database_url = env_value(
+        "DATABASE_URL",
+        "MYSQL_URL",
+        "MYSQL_URI",
+        "AIVEN_DATABASE_URL",
+        "AIVEN_SERVICE_URI",
+        default="",
+        allow_empty=True,
+    )
+    if not database_url:
+        host_value = env_value("DATABASE_HOST", "DB_HOST", default="", allow_empty=True)
+        if str(host_value).startswith(("mysql://", "mariadb://")):
+            database_url = host_value
     if not database_url:
         return {}
     parsed = urlparse(database_url)
