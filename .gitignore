@@ -4,6 +4,7 @@
 *.env
 !.env.example
 !backend/.env.example
+LOCAL_TEST_LOGINS.md
 
 # Python
 __pycache__/

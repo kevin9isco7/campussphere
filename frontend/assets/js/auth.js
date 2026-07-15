@@ -41,13 +41,13 @@ const AuthFlow = {
         { value: "18+", label: "School modules" },
       ],
       roles: [
-        { key: "student", name: "Student", icon: AuthIcons.student, email: "secondary.student@campus.local", description: "Access learning records, assignments, attendance, results, fees, and services." },
-        { key: "teacher", name: "Teacher", icon: AuthIcons.teacher, email: "secondary.teacher@campus.local", description: "Manage classes, attendance, assignments, examinations, and student progress." },
-        { key: "parent", name: "Parent", icon: AuthIcons.parent, email: "secondary.parent@campus.local", description: "Monitor learner attendance, performance, invoices, communication, and services." },
-        { key: "administrator", name: "School Administrator", icon: AuthIcons.admin, email: "secondary.admin@campus.local", description: "Control K-12 operations, guardians, teachers, classes, fees, services, users, and reports." },
-        { key: "accountant", name: "Accountant", icon: AuthIcons.finance, email: "secondary.accountant@campus.local", description: "Manage invoices, payments, payroll, fee reports, and finance controls." },
-        { key: "librarian", name: "Librarian", icon: AuthIcons.library, email: "secondary.librarian@campus.local", description: "Manage catalogues, inventory, loans, returns, and library reports." },
-        { key: "hr", name: "HR Officer", icon: AuthIcons.people, email: "secondary.hr@campus.local", description: "Manage employees, staff records, payroll inputs, and HR reports." },
+        { key: "student", name: "Student", icon: AuthIcons.student, description: "Access learning records, assignments, attendance, results, fees, and services." },
+        { key: "teacher", name: "Teacher", icon: AuthIcons.teacher, description: "Manage classes, attendance, assignments, examinations, and student progress." },
+        { key: "parent", name: "Parent", icon: AuthIcons.parent, description: "Monitor learner attendance, performance, invoices, communication, and services." },
+        { key: "administrator", name: "School Administrator", icon: AuthIcons.admin, description: "Control K-12 operations, guardians, teachers, classes, fees, services, users, and reports." },
+        { key: "accountant", name: "Accountant", icon: AuthIcons.finance, description: "Manage invoices, payments, payroll, fee reports, and finance controls." },
+        { key: "librarian", name: "Librarian", icon: AuthIcons.library, description: "Manage catalogues, inventory, loans, returns, and library reports." },
+        { key: "hr", name: "HR Officer", icon: AuthIcons.people, description: "Manage employees, staff records, payroll inputs, and HR reports." },
       ],
     },
     university: {
@@ -72,15 +72,15 @@ const AuthFlow = {
         { value: "20+", label: "University modules" },
       ],
       roles: [
-        { key: "student", name: "Student", icon: AuthIcons.student, email: "university.student@campus.local", description: "Access courses, results, finance, library, hostel, and academic services." },
-        { key: "lecturer", name: "Lecturer", icon: AuthIcons.teacher, email: "university.lecturer@campus.local", description: "Manage course delivery, attendance, assessments, results, and communication." },
-        { key: "administrator", name: "University Administrator", icon: AuthIcons.admin, email: "university.admin@campus.local", description: "Manage registrar services, faculties, departments, lecturers, student records, finance, and campus governance." },
-        { key: "registrar", name: "Registrar", icon: AuthIcons.registrar, email: "university.registrar@campus.local", description: "Manage admissions, student records, registration, examinations, and transcripts." },
-        { key: "dean", name: "Dean", icon: AuthIcons.dean, email: "university.dean@campus.local", description: "Oversee faculties, departments, academic quality, staff, and institutional reports." },
-        { key: "hod", name: "Head of Department", icon: AuthIcons.hod, email: "university.hod@campus.local", description: "Coordinate department staff, courses, curriculum, timetable, and results." },
-        { key: "accountant", name: "Accountant", icon: AuthIcons.finance, email: "university.accountant@campus.local", description: "Manage student billing, payments, payroll, budgets, and financial reports." },
-        { key: "librarian", name: "Librarian", icon: AuthIcons.library, email: "university.librarian@campus.local", description: "Manage library inventory, catalogues, lending, returns, and analytics." },
-        { key: "hr", name: "HR Officer", icon: AuthIcons.people, email: "university.hr@campus.local", description: "Manage personnel records, employee lifecycle, payroll support, and HR reports." },
+        { key: "student", name: "Student", icon: AuthIcons.student, description: "Access courses, results, finance, library, hostel, and academic services." },
+        { key: "lecturer", name: "Lecturer", icon: AuthIcons.teacher, description: "Manage course delivery, attendance, assessments, results, and communication." },
+        { key: "administrator", name: "University Administrator", icon: AuthIcons.admin, description: "Manage registrar services, faculties, departments, lecturers, student records, finance, and campus governance." },
+        { key: "registrar", name: "Registrar", icon: AuthIcons.registrar, description: "Manage admissions, student records, registration, examinations, and transcripts." },
+        { key: "dean", name: "Dean", icon: AuthIcons.dean, description: "Oversee faculties, departments, academic quality, staff, and institutional reports." },
+        { key: "hod", name: "Head of Department", icon: AuthIcons.hod, description: "Coordinate department staff, courses, curriculum, timetable, and results." },
+        { key: "accountant", name: "Accountant", icon: AuthIcons.finance, description: "Manage student billing, payments, payroll, budgets, and financial reports." },
+        { key: "librarian", name: "Librarian", icon: AuthIcons.library, description: "Manage library inventory, catalogues, lending, returns, and analytics." },
+        { key: "hr", name: "HR Officer", icon: AuthIcons.people, description: "Manage personnel records, employee lifecycle, payroll support, and HR reports." },
       ],
     },
   },
@@ -308,11 +308,11 @@ const AuthFlow = {
           <form class="form-stack" id="loginForm">
             <label class="field">
               <span>Email</span>
-              <input class="input" name="email" type="email" value="${escapeHtml(role.email || "")}" autocomplete="email" required>
+              <input class="input" name="email" type="email" placeholder="Enter your email" autocomplete="email" required>
             </label>
             <label class="field">
               <span>Password</span>
-              <input class="input" name="password" type="password" value="Campus@2026" autocomplete="current-password" required>
+              <input class="input" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required>
             </label>
             <button class="btn btn-primary" type="submit">Sign in</button>
           </form>
