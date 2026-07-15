@@ -48,6 +48,17 @@ body {
   overflow-x: hidden;
 }
 
+html.android-webview,
+html.android-webview body {
+  min-height: 100dvh;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html.android-webview body {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 img,
 video,
 svg {
@@ -2554,6 +2565,36 @@ button {
 }
 
 @media (max-width: 640px) {
+  html.android-webview .access-page,
+  html.android-webview .auth-page {
+    min-height: 100dvh;
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+    padding-top: max(18px, env(safe-area-inset-top));
+  }
+
+  html.android-webview .auth-panel,
+  html.android-webview .selection-card,
+  html.android-webview .standard-institution,
+  html.android-webview .portal-card {
+    border-radius: 16px;
+  }
+
+  html.android-webview .btn,
+  html.android-webview .input,
+  html.android-webview .select,
+  html.android-webview .icon-btn {
+    min-height: 46px;
+  }
+
+  html.android-webview .topbar {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+
+  html.android-webview .sidebar {
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-top: env(safe-area-inset-top);
+  }
+
   .access-page {
     padding: 18px 14px;
   }
