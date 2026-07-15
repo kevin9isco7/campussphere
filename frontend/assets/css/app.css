@@ -2937,6 +2937,12 @@ button {
   padding: 12px 14px;
 }
 
+.auth-secondary-action.compact {
+  background: transparent;
+  border-color: var(--border);
+  margin-top: 10px;
+}
+
 .text-button {
   background: transparent;
   border: 0;

@@ -322,6 +322,10 @@ const AuthFlow = {
               <button class="text-button" id="createApplicantAccount" type="button">Create admission account</button>
             </div>
           ` : ""}
+          <div class="auth-secondary-action compact">
+            <span>Login not connecting?</span>
+            <button class="text-button" id="apiSettings" type="button">Set API URL</button>
+          </div>
         </section>
         <section class="auth-visual" aria-hidden="true">
           <div class="login-context-card">
@@ -337,6 +341,7 @@ const AuthFlow = {
     this.root.querySelector("#backToPortals").addEventListener("click", () => this.renderPortalSelection());
     this.root.querySelector("#loginForm").addEventListener("submit", (event) => this.login(event));
     this.root.querySelector("#createApplicantAccount")?.addEventListener("click", () => this.renderStudentRegistration());
+    this.root.querySelector("#apiSettings").addEventListener("click", () => this.openApiSettings());
   },
 
   renderStudentRegistration() {
@@ -392,6 +397,10 @@ const AuthFlow = {
             </div>
             <button class="btn btn-primary" type="submit">Create account and continue</button>
           </form>
+          <div class="auth-secondary-action compact">
+            <span>Account creation not connecting?</span>
+            <button class="text-button" id="apiSettings" type="button">Set API URL</button>
+          </div>
         </section>
         <section class="auth-visual" aria-hidden="true">
           <div class="login-context-card">
@@ -406,6 +415,29 @@ const AuthFlow = {
 
     this.root.querySelector("#backToStudentLogin").addEventListener("click", () => this.renderLogin());
     this.root.querySelector("#applicantRegisterForm").addEventListener("submit", (event) => this.registerApplicant(event));
+    this.root.querySelector("#apiSettings").addEventListener("click", () => this.openApiSettings());
+  },
+
+  openApiSettings() {
+    const currentUrl = window.CONFIG?.API_URL || "";
+    const nextUrl = window.prompt(
+      "Enter the backend API URL. Example: https://your-render-service.onrender.com/api\n\nLeave blank to use the default configured URL.",
+      currentUrl
+    );
+    if (nextUrl === null) return;
+    const cleaned = nextUrl.trim().replace(/\/$/, "");
+    try {
+      if (cleaned) {
+        localStorage.setItem("apiBase", cleaned);
+        toast("API URL saved. Reloading...");
+      } else {
+        localStorage.removeItem("apiBase");
+        toast("API URL reset. Reloading...");
+      }
+      window.setTimeout(() => location.reload(), 700);
+    } catch (_error) {
+      toast("Could not save API URL on this device.");
+    }
   },
 
   async registerApplicant(event) {

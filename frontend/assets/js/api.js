@@ -51,7 +51,10 @@ const Api = {
       if (error.name === "AbortError") {
         throw new Error("Request timed out. Please try again.");
       }
-      throw error;
+      const apiError = new Error(`Cannot reach the CampusSphere API at ${API_BASE}. Check the backend URL or Render service status.`);
+      apiError.status = 0;
+      apiError.cause = error;
+      throw apiError;
     } finally {
       if (timeoutId) window.clearTimeout(timeoutId);
     }

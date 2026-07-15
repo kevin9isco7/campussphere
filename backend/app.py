@@ -23,6 +23,10 @@ def create_app():
     register_routes(app)
     register_error_handlers(app)
 
+    @app.get("/")
+    def root():
+        return {"status": "healthy", "service": "CampusSphere API", "health": "/api/health"}
+
     @app.get("/api/health")
     def health():
         return {"status": "healthy", "service": "CampusSphere API"}
