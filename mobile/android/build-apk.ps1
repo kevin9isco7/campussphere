@@ -11,15 +11,24 @@ $D8 = Join-Path $BuildTools "d8.bat"
 $Zipalign = Join-Path $BuildTools "zipalign.exe"
 $ApkSigner = Join-Path $BuildTools "apksigner.bat"
 $Java8Home = "C:\Program Files (x86)\Java\jre1.8.0_251"
+$PortableJavac = Get-ChildItem (Join-Path $ProjectRoot ".jdk\jdk17") -Recurse -Filter javac.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+$PortableKeytool = Get-ChildItem (Join-Path $ProjectRoot ".jdk\jdk17") -Recurse -Filter keytool.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+$PortableJar = Get-ChildItem (Join-Path $ProjectRoot ".jdk\jdk17") -Recurse -Filter jar.exe -ErrorAction SilentlyContinue | Select-Object -First 1
 $JavacCommand = Get-Command javac.exe -ErrorAction SilentlyContinue
-$Javac = if ($JavacCommand) { $JavacCommand.Source } else { "" }
-$Keytool = Join-Path $Java8Home "bin\keytool.exe"
+$Javac = if ($PortableJavac) { $PortableJavac.FullName } elseif ($JavacCommand) { $JavacCommand.Source } else { "" }
+$Keytool = if ($PortableKeytool) { $PortableKeytool.FullName } else { Join-Path $Java8Home "bin\keytool.exe" }
+$Jar = if ($PortableJar) { $PortableJar.FullName } else { "jar.exe" }
+if ($PortableJavac) {
+    $env:JAVA_HOME = Split-Path -Parent (Split-Path -Parent $PortableJavac.FullName)
+    $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+}
 $Keystore = Join-Path $ProjectRoot "debug.keystore"
 
 $CompiledResources = Join-Path $BuildRoot "compiled-resources.zip"
 $GeneratedRoot = Join-Path $BuildRoot "generated"
 $ClassesRoot = Join-Path $BuildRoot "classes"
 $DexRoot = Join-Path $BuildRoot "dex"
+$ClassesJar = Join-Path $BuildRoot "classes.jar"
 $UnsignedApk = Join-Path $BuildRoot "campussphere-unsigned.apk"
 $DexApk = Join-Path $BuildRoot "campussphere-dex.apk"
 $AlignedApk = Join-Path $BuildRoot "campussphere-aligned.apk"
@@ -75,9 +84,16 @@ $SourceFiles = @(
 )
 
 Invoke-AndroidTool $Javac @("-encoding", "UTF-8", "-source", "1.8", "-target", "1.8", "-bootclasspath", $AndroidJar, "-d", $ClassesRoot, $SourceFiles[0], $SourceFiles[1])
-Invoke-AndroidTool $D8 @("--lib", $AndroidJar, "--min-api", "23", "--output", $DexRoot, $ClassesRoot)
+Push-Location $ClassesRoot
+try {
+    Invoke-AndroidTool $Jar @("cf", $ClassesJar, ".")
+} finally {
+    Pop-Location
+}
+Invoke-AndroidTool $D8 @("--lib", $AndroidJar, "--min-api", "23", "--output", $DexRoot, $ClassesJar)
 
 Copy-Item $UnsignedApk $DexApk -Force
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [System.IO.Compression.ZipFile]::Open($DexApk, [System.IO.Compression.ZipArchiveMode]::Update)
 try {

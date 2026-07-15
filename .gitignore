@@ -42,3 +42,4 @@ Thumbs.db
 local.properties
 mobile/android/debug.keystore
 mobile/android/app/build/
+mobile/android/.jdk/
