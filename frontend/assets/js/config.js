@@ -11,7 +11,7 @@
     storedApiUrl = "";
   }
   const apiUrl =
-    storedApiUrl ||
+    (isLocal ? "" : storedApiUrl) ||
     overrides.API_URL ||
     (isLocal ? "http://127.0.0.1:5000/api" : productionApiUrl);
 
