@@ -312,7 +312,7 @@ const AuthFlow = {
             </label>
             <label class="field">
               <span>Password</span>
-              <input class="input" name="password" type="password" placeholder="Enter your password" autocomplete="current-password" required>
+              ${this.passwordInput("password", "Enter your password", "current-password")}
             </label>
             <button class="btn btn-primary" type="submit">Sign in</button>
           </form>
@@ -342,6 +342,7 @@ const AuthFlow = {
     this.root.querySelector("#loginForm").addEventListener("submit", (event) => this.login(event));
     this.root.querySelector("#createApplicantAccount")?.addEventListener("click", () => this.renderStudentRegistration());
     this.root.querySelector("#apiSettings").addEventListener("click", () => this.openApiSettings());
+    this.bindPasswordToggles();
   },
 
   renderStudentRegistration() {
@@ -390,11 +391,11 @@ const AuthFlow = {
             <div class="form-grid two">
               <label class="field">
                 <span>Password</span>
-                <input class="input" name="password" type="password" autocomplete="new-password" minlength="8" required>
+                ${this.passwordInput("password", "", "new-password", "8")}
               </label>
               <label class="field">
                 <span>Confirm password</span>
-                <input class="input" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required>
+                ${this.passwordInput("confirm_password", "", "new-password", "8")}
               </label>
             </div>
             <button class="btn btn-primary" type="submit">Create account and continue</button>
@@ -419,6 +420,45 @@ const AuthFlow = {
     this.root.querySelector("#applicantRegisterForm").addEventListener("submit", (event) => this.registerApplicant(event));
     this.root.querySelector("#apiSettings").addEventListener("click", () => this.openApiSettings());
     this.populateDesiredLevelOptions(this.state.institution, "#desiredLevelSelect");
+    this.bindPasswordToggles();
+  },
+
+  passwordInput(name, placeholder = "", autocomplete = "current-password", minLength = "") {
+    const inputId = `password-${name}-${Math.random().toString(36).slice(2, 8)}`;
+    return `
+      <div class="password-control">
+        <input
+          class="input"
+          id="${escapeHtml(inputId)}"
+          name="${escapeHtml(name)}"
+          type="password"
+          ${placeholder ? `placeholder="${escapeHtml(placeholder)}"` : ""}
+          autocomplete="${escapeHtml(autocomplete)}"
+          ${minLength ? `minlength="${escapeHtml(minLength)}"` : ""}
+          required
+        >
+        <button class="password-toggle" type="button" data-password-toggle="${escapeHtml(inputId)}" aria-label="Show password" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </button>
+      </div>
+    `;
+  },
+
+  bindPasswordToggles() {
+    this.root.querySelectorAll("[data-password-toggle]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const input = document.getElementById(button.dataset.passwordToggle);
+        if (!input) return;
+        const isHidden = input.type === "password";
+        input.type = isHidden ? "text" : "password";
+        button.setAttribute("aria-pressed", String(isHidden));
+        button.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+        button.classList.toggle("visible", isHidden);
+      });
+    });
   },
 
   async populateDesiredLevelOptions(institution, selector) {
