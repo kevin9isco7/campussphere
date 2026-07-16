@@ -1,5 +1,7 @@
 const ApplicantApp = {
   application: null,
+  admissionOptions: [],
+  admissionOptionLabel: "Programme / Subject",
 
   async init() {
     requireSession();
@@ -13,9 +15,21 @@ const ApplicantApp = {
     try {
       const result = await Api.get("/applicant/application");
       this.application = result.application;
+      await this.loadAdmissionOptions(result.application.institution);
       this.render();
     } catch (error) {
       this.container.innerHTML = `<section class="module-card applicant-shell"><h1>Admission Application</h1><p class="muted">${escapeHtml(error.message)}</p></section>`;
+    }
+  },
+
+  async loadAdmissionOptions(institution) {
+    try {
+      const result = await Api.get(`/applicant/options?institution=${encodeURIComponent(institution || "")}`);
+      this.admissionOptions = result.options || [];
+      this.admissionOptionLabel = result.label || this.gradeLabel();
+    } catch (_error) {
+      this.admissionOptions = [];
+      this.admissionOptionLabel = this.gradeLabel();
     }
   },
 
@@ -56,7 +70,7 @@ const ApplicantApp = {
               ${this.field("last_name", "Last name", app.last_name)}
               ${this.field("date_of_birth", "Date of birth", app.date_of_birth, "date")}
               ${this.selectField("gender", "Gender", app.gender, ["Female", "Male", "Other"])}
-              ${this.field("grade_applied", this.gradeLabel(), app.grade_applied)}
+              ${this.admissionChoiceField("grade_applied", this.admissionOptionLabel, app.grade_applied)}
               ${this.field("guardian_name", "Guardian / Sponsor name", app.guardian_name)}
               ${this.field("guardian_phone", "Guardian / Sponsor phone", app.guardian_phone, "tel")}
               ${this.field("guardian_email", "Guardian / Sponsor email", app.guardian_email, "email", false)}
@@ -136,7 +150,8 @@ const ApplicantApp = {
 
   gradeLabel() {
     const context = getPortalContext();
-    return context.institution === "university" ? "Programme / Faculty" : "Grade / Class applying for";
+    const institution = this.application?.institution || context.institution;
+    return institution === "university" ? "Programme / Faculty applying for" : "Subject applying for";
   },
 
   hasDetails() {
@@ -162,6 +177,30 @@ const ApplicantApp = {
         <span>${escapeHtml(label)}</span>
         <select class="input" name="${escapeHtml(name)}" required>
           ${options.map((option) => `<option value="${escapeHtml(option)}" ${option === value ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}
+        </select>
+      </label>
+    `;
+  },
+
+  admissionChoiceField(name, label, value) {
+    if (!this.admissionOptions.length) {
+      return `
+        <label class="field">
+          <span>${escapeHtml(label)}</span>
+          <select class="input" name="${escapeHtml(name)}" required disabled>
+            <option value="">No options configured yet</option>
+          </select>
+        </label>
+      `;
+    }
+    const hasCurrentValue = value && !this.admissionOptions.some((option) => option.value === value);
+    return `
+      <label class="field">
+        <span>${escapeHtml(label)}</span>
+        <select class="input" name="${escapeHtml(name)}" required>
+          <option value="">Select ${escapeHtml(label)}</option>
+          ${hasCurrentValue ? `<option value="${escapeHtml(value)}" selected>${escapeHtml(value)} (current)</option>` : ""}
+          ${this.admissionOptions.map((option) => `<option value="${escapeHtml(option.value)}" ${option.value === value ? "selected" : ""}>${escapeHtml(option.label)}</option>`).join("")}
         </select>
       </label>
     `;

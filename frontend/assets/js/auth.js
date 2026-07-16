@@ -352,7 +352,7 @@ const AuthFlow = {
       return;
     }
 
-    const levelLabel = institution.key === "university" ? "Programme / Faculty applying for" : "Grade / Class applying for";
+    const levelLabel = institution.key === "university" ? "Programme / Faculty applying for" : "Subject applying for";
     this.root.innerHTML = `
       <main class="auth-page contextual-login ${this.hasBackgroundMedia() ? "with-media" : ""}">
         ${this.backgroundMarkup()}
@@ -383,7 +383,9 @@ const AuthFlow = {
             </label>
             <label class="field">
               <span>${escapeHtml(levelLabel)}</span>
-              <input class="input" name="desired_level" required>
+              <select class="input" name="desired_level" id="desiredLevelSelect" required>
+                <option value="">Loading options...</option>
+              </select>
             </label>
             <div class="form-grid two">
               <label class="field">
@@ -416,6 +418,27 @@ const AuthFlow = {
     this.root.querySelector("#backToStudentLogin").addEventListener("click", () => this.renderLogin());
     this.root.querySelector("#applicantRegisterForm").addEventListener("submit", (event) => this.registerApplicant(event));
     this.root.querySelector("#apiSettings").addEventListener("click", () => this.openApiSettings());
+    this.populateDesiredLevelOptions(this.state.institution, "#desiredLevelSelect");
+  },
+
+  async populateDesiredLevelOptions(institution, selector) {
+    const select = this.root.querySelector(selector);
+    if (!select) return;
+    try {
+      const result = await Api.get(`/applicant/options?institution=${encodeURIComponent(institution)}`);
+      if (!result.options?.length) {
+        select.innerHTML = `<option value="">No options configured yet</option>`;
+        select.disabled = true;
+        return;
+      }
+      select.disabled = false;
+      select.innerHTML = `<option value="">Select ${escapeHtml(result.label || "option")}</option>${result.options.map((option) => `
+        <option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>
+      `).join("")}`;
+    } catch (_error) {
+      select.innerHTML = `<option value="">Options unavailable</option>`;
+      select.disabled = true;
+    }
   },
 
   openApiSettings() {

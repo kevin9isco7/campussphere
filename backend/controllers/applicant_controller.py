@@ -131,6 +131,82 @@ def _extension(filename):
     return filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
 
 
+def _option(label, value=None, group=None):
+    cleaned_label = str(label or "").strip()
+    if not cleaned_label:
+        return None
+    return {
+        "label": cleaned_label,
+        "value": str(value or cleaned_label).strip(),
+        "group": str(group or "").strip(),
+    }
+
+
+@applicant_bp.get("/applicant/options")
+def applicant_options():
+    institution = (request.args.get("institution") or "").strip().lower()
+    if institution not in {"secondary", "university"}:
+        raise ApiError("Institution must be secondary or university.", 422)
+
+    options = []
+    with db_cursor() as cursor:
+        if institution == "secondary":
+            cursor.execute(
+                """
+                SELECT code, name, department
+                FROM subjects
+                ORDER BY department IS NULL, department, name
+                """
+            )
+            for row in cursor.fetchall():
+                label = row["name"]
+                if row.get("code"):
+                    label = f"{row['name']} ({row['code']})"
+                option = _option(label, row["name"], row.get("department"))
+                if option:
+                    options.append(option)
+        else:
+            cursor.execute(
+                """
+                SELECT DISTINCT department
+                FROM subjects
+                WHERE department IS NOT NULL AND TRIM(department) <> ''
+                ORDER BY department
+                """
+            )
+            seen = set()
+            for row in cursor.fetchall():
+                option = _option(row["department"], row["department"], "Faculty / Department")
+                if option and option["value"].lower() not in seen:
+                    seen.add(option["value"].lower())
+                    options.append(option)
+
+            cursor.execute(
+                """
+                SELECT code, name, department
+                FROM subjects
+                ORDER BY department IS NULL, department, name
+                """
+            )
+            for row in cursor.fetchall():
+                label = row["name"]
+                if row.get("department"):
+                    label = f"{row['department']} - {row['name']}"
+                if row.get("code"):
+                    label = f"{label} ({row['code']})"
+                option = _option(label, row["name"], row.get("department") or "Programme")
+                if option and option["value"].lower() not in seen:
+                    seen.add(option["value"].lower())
+                    options.append(option)
+
+    return {
+        "institution": institution,
+        "field": "grade_applied",
+        "label": "Programme / Faculty applying for" if institution == "university" else "Subject applying for",
+        "options": options,
+    }
+
+
 @applicant_bp.post("/applicants/register")
 def register_applicant():
     data = request.get_json(silent=True) or {}
