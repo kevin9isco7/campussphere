@@ -1,9 +1,27 @@
 from contextlib import contextmanager
+import tempfile
+from pathlib import Path
 
 import pymysql
 from pymysql.cursors import DictCursor
 
 from config import Config
+
+_CA_FILE = None
+
+
+def _ca_path():
+    global _CA_FILE
+    ca_value = (Config.DATABASE_SSL_CA or "").strip()
+    if not ca_value:
+        return ""
+    if "BEGIN CERTIFICATE" not in ca_value:
+        return ca_value
+    if not _CA_FILE:
+        path = Path(tempfile.gettempdir()) / "campussphere_mysql_ca.pem"
+        path.write_text(ca_value, encoding="utf-8")
+        _CA_FILE = str(path)
+    return _CA_FILE
 
 
 def _ssl_options():
@@ -12,10 +30,32 @@ def _ssl_options():
         return None
     if mode in {"verify-ca", "verify_ca", "verify-full", "verify_identity"}:
         options = {"check_hostname": mode in {"verify-full", "verify_identity"}}
-        if Config.DATABASE_SSL_CA:
-            options["ca"] = Config.DATABASE_SSL_CA
+        ca_path = _ca_path()
+        if ca_path:
+            options["ca"] = ca_path
         return options
-    return {"check_hostname": False}
+    options = {"check_hostname": False}
+    ca_path = _ca_path()
+    if ca_path:
+        options["ca"] = ca_path
+    return options
+
+
+def database_diagnostics(error=None):
+    host = Config.DB_HOST or ""
+    host_type = "local" if host in {"127.0.0.1", "localhost", ""} else "remote"
+    return {
+        "configured": bool(Config.DB_HOST and Config.DB_NAME and Config.DB_USER),
+        "config_source": "database_url" if getattr(Config, "USE_DATABASE_URL", False) else "individual_env_vars",
+        "host_type": host_type,
+        "port": Config.DB_PORT,
+        "database_name_set": bool(Config.DB_NAME),
+        "user_set": bool(Config.DB_USER),
+        "password_set": bool(Config.DB_PASSWORD),
+        "ssl_mode": Config.DATABASE_SSL_MODE or "disabled",
+        "ssl_ca_set": bool(Config.DATABASE_SSL_CA),
+        "error_type": error.__class__.__name__ if error else None,
+    }
 
 
 def get_connection():

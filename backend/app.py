@@ -5,7 +5,7 @@ from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import Config
-from database.connection import ping_database
+from database.connection import database_diagnostics, ping_database
 from middleware.errors import register_error_handlers
 from routes.registry import register_routes
 
@@ -57,10 +57,23 @@ def create_app():
     def database_health():
         try:
             if ping_database():
-                return {"status": "healthy", "database": "connected"}
+                return {
+                    "status": "healthy",
+                    "database": "connected",
+                    "diagnostics": database_diagnostics(),
+                }
         except Exception as error:
             app.logger.warning("Database health check failed: %s", error.__class__.__name__)
-        return {"status": "unhealthy", "database": "unavailable"}, 503
+            return {
+                "status": "unhealthy",
+                "database": "unavailable",
+                "diagnostics": database_diagnostics(error),
+            }, 503
+        return {
+            "status": "unhealthy",
+            "database": "unavailable",
+            "diagnostics": database_diagnostics(),
+        }, 503
 
     @app.get("/uploads/<path:filename>")
     def uploaded_file(filename):
